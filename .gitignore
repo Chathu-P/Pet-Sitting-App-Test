@@ -1,7 +1,19 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Node modules
 node_modules/
+
+# Environment files
+.env
+
+# Firebase service account and credentials
+credentials/
+*.serviceAccountKey.json
+*.json
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Expo
 .expo/
