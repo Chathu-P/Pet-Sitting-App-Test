@@ -61,7 +61,7 @@ const mockRequests: MatchRequest[] = [
 ];
 
 const BrowseRequestsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { wp, hp } = useResponsive();
   const spacing = useResponsiveSpacing();
   const fonts = useResponsiveFonts();
@@ -247,6 +247,35 @@ const BrowseRequestsScreen: React.FC = () => {
                     </View>
                   ))}
                 </View>
+
+                {/* Chat Button */}
+                <Pressable
+                  style={{
+                    marginTop: spacing.lg,
+                    backgroundColor: COLORS.secondary,
+                    paddingVertical: 12,
+                    borderRadius: BORDER_RADIUS.md,
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={() =>
+                    navigation.navigate("ChatScreen" as never, {
+                      chatId: "request_" + r.id,
+                      chatName: r.petName + "'s Owner",
+                    } as never)
+                  }
+                >
+                  <MaterialIcons
+                    name="chat"
+                    size={20}
+                    color={COLORS.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ color: COLORS.white, fontWeight: "600" }}>
+                    Chat with Owner
+                  </Text>
+                </Pressable>
               </View>
             ))}
           </View>

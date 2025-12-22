@@ -30,6 +30,10 @@ import {
   PetRequestDetailsScreen,
   GiveBadgeScreen,
 } from "../screens/PetOwnerDashboard";
+import ChatListScreen from "../screens/ChatListScreen";
+import ChatScreen from "../screens/ChatScreen";
+import DiaryScreen from "../screens/DiaryScreen";
+import AddDiaryEntryScreen from "../screens/AddDiaryEntryScreen";
 import { auth, db } from "../services/firebase";
 import { getIdTokenResult, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -53,6 +57,10 @@ export type RootStackParamList = {
   GiveBadgeScreen: { sitterId: string; sitterName: string };
   PasswordResetScreen: undefined;
   ResetPasswordScreen: { email?: string; oobCode?: string };
+  ChatListScreen: undefined;
+  ChatScreen: { chatId: string; chatName?: string };
+  DiaryScreen: undefined;
+  AddDiaryEntryScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -237,6 +245,12 @@ export default function RootNavigator() {
           name="AdminRequestsScreen"
           component={AdminRequestsScreen}
         />
+
+        {/* Features */}
+        <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+        <Stack.Screen name="ChatScreen" component={ChatScreen} />
+        <Stack.Screen name="DiaryScreen" component={DiaryScreen} />
+        <Stack.Screen name="AddDiaryEntryScreen" component={AddDiaryEntryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

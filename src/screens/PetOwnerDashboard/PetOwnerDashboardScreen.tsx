@@ -89,7 +89,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
     try {
       await signOut(auth);
       navigation.navigate("HomeScreen");
-    } catch {}
+    } catch { }
   };
 
   return (
@@ -185,7 +185,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             {stats.map((s) => (
               <Pressable
                 key={s.label}
-                onPress={() => {}}
+                onPress={() => { }}
                 style={{ flex: 1, minWidth: 0 }}
               >
                 <View
@@ -211,7 +211,6 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           </View>
         </ImageBackground>
 
-        {/* Find a Pet Sitter button */}
         <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
           <Button
             title="+ Find a Pet Sitter"
@@ -221,9 +220,24 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             style={{
               borderRadius: BORDER_RADIUS.lg,
               minHeight: isSmallDevice ? 48 : 56,
+              marginBottom: spacing.md,
             }}
             textStyle={{ fontSize: fonts.medium, fontWeight: "600" }}
           />
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <Button
+              title="💬 Messages"
+              variant="outline"
+              onPress={() => navigation.navigate("ChatListScreen")}
+              style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
+            />
+            <Button
+              title="📖 Diary"
+              variant="outline"
+              onPress={() => navigation.navigate("DiaryScreen")}
+              style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
+            />
+          </View>
         </View>
 
         {/* My Requests section */}

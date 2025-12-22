@@ -77,35 +77,35 @@ const PetSitterDashboardScreen: React.FC = () => {
             // Fetch badges
             const badgeData = data?.badges || {};
             const badgeMap: { [key: string]: { name: string; icon: string } } =
-              {
-                "animal-lover": { name: "Animal Lover", icon: "🐾" },
-                "puppy-pro": { name: "Puppy Pro", icon: "🐕" },
-                "cat-whisperer": { name: "Cat Whisperer", icon: "🐱" },
-                "reliable-care": { name: "Reliable Care", icon: "⭐" },
-                "great-communicator": {
-                  name: "Great Communicator",
-                  icon: "💬",
-                },
-                "calm-patient": { name: "Calm & Patient", icon: "🧠" },
-                "multi-pet-expert": { name: "Multi-Pet Expert", icon: "🐾" },
-                "young-pet-specialist": {
-                  name: "Young Pet Specialist",
-                  icon: "🍼",
-                },
-                "senior-pet-friendly": {
-                  name: "Senior Pet Friendly",
-                  icon: "🧓",
-                },
-                "follows-routine": {
-                  name: "Follows Routine Perfectly",
-                  icon: "🎯",
-                },
-                "leash-walk-pro": { name: "Leash & Walk Pro", icon: "🐕‍🦺" },
-                "clean-feeding": { name: "Clean Feeding Habits", icon: "🧺" },
-                "stress-free-care": { name: "Stress-Free Care", icon: "🐾" },
-                "above-beyond": { name: "Above & Beyond", icon: "💖" },
-                "home-aware": { name: "Home-Aware Caretaker", icon: "🏡" },
-              };
+            {
+              "animal-lover": { name: "Animal Lover", icon: "🐾" },
+              "puppy-pro": { name: "Puppy Pro", icon: "🐕" },
+              "cat-whisperer": { name: "Cat Whisperer", icon: "🐱" },
+              "reliable-care": { name: "Reliable Care", icon: "⭐" },
+              "great-communicator": {
+                name: "Great Communicator",
+                icon: "💬",
+              },
+              "calm-patient": { name: "Calm & Patient", icon: "🧠" },
+              "multi-pet-expert": { name: "Multi-Pet Expert", icon: "🐾" },
+              "young-pet-specialist": {
+                name: "Young Pet Specialist",
+                icon: "🍼",
+              },
+              "senior-pet-friendly": {
+                name: "Senior Pet Friendly",
+                icon: "🧓",
+              },
+              "follows-routine": {
+                name: "Follows Routine Perfectly",
+                icon: "🎯",
+              },
+              "leash-walk-pro": { name: "Leash & Walk Pro", icon: "🐕‍🦺" },
+              "clean-feeding": { name: "Clean Feeding Habits", icon: "🧺" },
+              "stress-free-care": { name: "Stress-Free Care", icon: "🐾" },
+              "above-beyond": { name: "Above & Beyond", icon: "💖" },
+              "home-aware": { name: "Home-Aware Caretaker", icon: "🏡" },
+            };
 
             const formattedBadges = Object.entries(badgeData)
               .filter(([_, value]: [string, any]) => value?.count > 0)
@@ -359,6 +359,28 @@ const PetSitterDashboardScreen: React.FC = () => {
             <Text style={[styles.editButtonText, { fontSize: fonts.regular }]}>
               Edit Profile
             </Text>
+          </Pressable>
+        </View>
+
+        {/* Messages and Diary */}
+        <View style={{ flexDirection: "row", gap: spacing.md, paddingHorizontal: wp(5), marginTop: spacing.md }}>
+          <Pressable
+            style={[
+              styles.browseButton,
+              { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
+            ]}
+            onPress={() => navigation.navigate("ChatListScreen")}
+          >
+            <Text style={{ color: "#6B5344", fontWeight: "600" }}>💬 Messages</Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.browseButton,
+              { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
+            ]}
+            onPress={() => navigation.navigate("DiaryScreen")}
+          >
+            <Text style={{ color: "#6B5344", fontWeight: "600" }}>📖 Diary</Text>
           </Pressable>
         </View>
 
