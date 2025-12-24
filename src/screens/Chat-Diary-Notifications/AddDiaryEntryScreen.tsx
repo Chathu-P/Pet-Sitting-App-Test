@@ -6,6 +6,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { COLORS } from "../../utils/constants";
 import Header from "../../components/Header";
 import { sendNotification } from "../../services/notifications";
+import * as ImagePicker from 'expo-image-picker';
 
 const AddDiaryEntryScreen = () => {
     const [note, setNote] = useState("");
@@ -18,9 +19,30 @@ const AddDiaryEntryScreen = () => {
 
     const moods = ["Happy", "Playful", "Sleepy", "Grumpy", "Hungry"];
 
-    const handlePickImage = () => {
-        // Simulating image pick for simplicity and robustness
-        setPhotoUrl("https://placedog.net/500/280?random=" + Math.random());
+    const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert("Permission needs", "Please allow access to your photos to add a picture.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.2, // Low quality to fit in Firestore (1MB limit limit hack)
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            const asset = result.assets[0];
+            if (asset.base64) {
+                // Store as Data URI
+                setPhotoUrl(`data:image/jpeg;base64,${asset.base64}`);
+            } else {
+                setPhotoUrl(asset.uri);
+            }
+        }
     };
 
     const handleSubmit = async () => {

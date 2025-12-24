@@ -15,8 +15,20 @@ const DiaryScreen = () => {
     const user = auth.currentUser;
     const { chatId } = route.params || {};
 
+    const [role, setRole] = useState<"owner" | "sitter" | null>(null);
+
     useEffect(() => {
         if (!user) return;
+
+        // Fetch user role
+        const fetchRole = async () => {
+            const importFirestore = await import("firebase/firestore");
+            const userDoc = await importFirestore.getDoc(importFirestore.doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                setRole(userDoc.data().role);
+            }
+        };
+        fetchRole();
 
         let q;
         if (chatId) {
@@ -39,14 +51,8 @@ const DiaryScreen = () => {
             setEntries(
                 snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
             );
-        }, (error) => {
+        }, (error: any) => { // Type as any for now to avoid unused var issues with precise types
             console.error("Diary snapshot error:", error);
-            if (error.code === 'permission-denied') {
-                alert("Permission Denied: Please update your Firestore Security Rules.");
-            } else if (error.code === 'failed-precondition') {
-                console.warn("Index missing. Check console for link.");
-                alert("Index Missing: Please check the console logs for a link to create the required Firestore index.");
-            }
         });
         return unsubscribe;
     }, [user, chatId]);
@@ -76,21 +82,22 @@ const DiaryScreen = () => {
                 }
             />
 
-            {/* FAB for Sitter to add entry */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => {
-                    if (!chatId) {
-                        alert("Please select a chat to add a diary entry.");
-                        // Alternatively, allow picking a chat? But simplicity first.
-                        navigation.navigate("ChatListScreen"); // Go pick a chat
-                        return;
-                    }
-                    navigation.navigate("AddDiaryEntryScreen", { chatId });
-                }}
-            >
-                <Text style={styles.fabText}>+</Text>
-            </TouchableOpacity>
+            {/* FAB for Sitter ONLY */}
+            {role === "sitter" && (
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() => {
+                        if (!chatId) {
+                            alert("Please select a chat to add a diary entry.");
+                            navigation.navigate("ChatListScreen");
+                            return;
+                        }
+                        navigation.navigate("AddDiaryEntryScreen", { chatId });
+                    }}
+                >
+                    <Text style={styles.fabText}>+</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
