@@ -67,15 +67,23 @@ const PetSitterDashboardScreen: React.FC = () => {
       try {
         const currentUser = auth.currentUser;
         if (currentUser) {
+          // Fetch basic user info
           const userDocRef = doc(db, "users", currentUser.uid);
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
             setSitterName(data?.fullName || "Sitter");
             setSitterEmail(data?.email || currentUser.email || "");
+          }
 
-            // Fetch badges
-            const badgeData = data?.badges || {};
+          // Fetch sitter profile from separate collection
+          const profileDocRef = doc(db, "sitterProfiles", currentUser.uid);
+          const profileDocSnap = await getDoc(profileDocRef);
+          if (profileDocSnap.exists()) {
+            const profileData = profileDocSnap.data();
+
+            // Fetch badges from sitter profile
+            const badgeData = profileData?.badges || {};
             const badgeMap: { [key: string]: { name: string; icon: string } } =
               {
                 "animal-lover": { name: "Animal Lover", icon: "🐾" },

@@ -94,6 +94,8 @@ const PetSitterSignupScreen: React.FC = () => {
         password
       );
       const uid = cred.user.uid;
+      
+      // Create basic user document
       await setDoc(doc(db, "users", uid), {
         role: "sitter",
         fullName: fullName || "",
@@ -102,6 +104,56 @@ const PetSitterSignupScreen: React.FC = () => {
         address: address || "",
         createdAt: serverTimestamp(),
       });
+
+      // Create separate sitter profile
+      await setDoc(doc(db, "sitterProfiles", uid), {
+        userId: uid,
+        profile: {
+          photoUrl: "",
+          rating: 0,
+          totalReviews: 0,
+        },
+        badges: {
+          "animal-lover": { count: 0, awardedBy: [] },
+          "puppy-pro": { count: 0, awardedBy: [] },
+          "cat-whisperer": { count: 0, awardedBy: [] },
+          "reliable-care": { count: 0, awardedBy: [] },
+          "great-communicator": { count: 0, awardedBy: [] },
+          "calm-patient": { count: 0, awardedBy: [] },
+          "multi-pet-expert": { count: 0, awardedBy: [] },
+          "young-pet-specialist": { count: 0, awardedBy: [] },
+          "senior-pet-friendly": { count: 0, awardedBy: [] },
+          "follows-routine": { count: 0, awardedBy: [] },
+          "leash-walk-pro": { count: 0, awardedBy: [] },
+          "clean-feeding": { count: 0, awardedBy: [] },
+          "stress-free-care": { count: 0, awardedBy: [] },
+          "above-beyond": { count: 0, awardedBy: [] },
+          "home-aware": { count: 0, awardedBy: [] },
+        },
+        experience: {
+          yearsOfExperience: 0,
+          description: "",
+        },
+        skills: {
+          bigDogs: false,
+          smallDogs: false,
+          puppies: false,
+          cats: false,
+          kittens: false,
+          medicalCare: false,
+          training: false,
+          grooming: false,
+          multiplePets: false,
+          seniorPets: false,
+        },
+        availability: {
+          schedule: "",
+        },
+        aboutMe: "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
       // Navigate to Pet Sitter Dashboard
       navigation.navigate("PetSitterDashboardScreen" as never);
     } catch (e: any) {
