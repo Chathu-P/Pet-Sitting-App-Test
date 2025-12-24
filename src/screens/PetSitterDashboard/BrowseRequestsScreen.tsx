@@ -16,9 +16,13 @@ import {
   useResponsiveSpacing,
   useResponsiveFonts,
 } from "../../utils/responsive";
+import { auth, db } from "../../services/firebase";
+import { getConsistentChatId } from "../../services/notifications";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 interface MatchRequest {
   id: string;
+  ownerId: string; // Added ownerId for chat
   petName: string;
   breed: string;
   ageYears: number;
@@ -33,6 +37,7 @@ interface MatchRequest {
 const mockRequests: MatchRequest[] = [
   {
     id: "1",
+    ownerId: "owner_1",
     petName: "Max",
     breed: "Golden Retriever",
     ageYears: 3,
@@ -48,6 +53,7 @@ const mockRequests: MatchRequest[] = [
   },
   {
     id: "2",
+    ownerId: "owner_2",
     petName: "Luna",
     breed: "Persian Cat",
     ageYears: 2,
@@ -61,7 +67,7 @@ const mockRequests: MatchRequest[] = [
 ];
 
 const BrowseRequestsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { wp, hp } = useResponsive();
   const spacing = useResponsiveSpacing();
   const fonts = useResponsiveFonts();
@@ -247,6 +253,57 @@ const BrowseRequestsScreen: React.FC = () => {
                     </View>
                   ))}
                 </View>
+
+                {/* Chat Button */}
+                <Pressable
+                  style={{
+                    marginTop: spacing.lg,
+                    backgroundColor: COLORS.secondary,
+                    paddingVertical: 12,
+                    borderRadius: BORDER_RADIUS.md,
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={async () => {
+                    // Chat Initiation Logic
+                    if (!auth.currentUser) return;
+                    try {
+                      // 1. Generate Consistent Chat ID
+                      // Import getConsistentChatId from notifications service
+                      const chatId = getConsistentChatId(auth.currentUser.uid, r.ownerId);
+
+                      // 2. Ensure Chat Exists in Firestore
+                      const chatRef = doc(db, "chats", chatId);
+                      await setDoc(chatRef, {
+                        participants: [auth.currentUser.uid, r.ownerId],
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp(),
+                        name: r.petName + "'s Request", // Default name
+                        lastMessage: "",
+                      }, { merge: true });
+
+                      // 3. Navigate
+                      navigation.navigate("ChatScreen", {
+                        chatId: chatId,
+                        chatName: r.petName + "'s Owner",
+                      });
+                    } catch (error) {
+                      console.error("Error starting chat:", error);
+                      alert("Could not start chat.");
+                    }
+                  }}
+                >
+                  <MaterialIcons
+                    name="chat"
+                    size={20}
+                    color={COLORS.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ color: COLORS.white, fontWeight: "600" }}>
+                    Chat with Owner
+                  </Text>
+                </Pressable>
               </View>
             ))}
           </View>

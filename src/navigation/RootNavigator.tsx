@@ -30,6 +30,10 @@ import {
   PetRequestDetailsScreen,
   GiveBadgeScreen,
 } from "../screens/PetOwnerDashboard";
+import ChatListScreen from "../screens/Chat-Diary-Notifications/ChatListScreen";
+import ChatScreen from "../screens/Chat-Diary-Notifications/ChatScreen";
+import DiaryScreen from "../screens/Chat-Diary-Notifications/DiaryScreen";
+import AddDiaryEntryScreen from "../screens/Chat-Diary-Notifications/AddDiaryEntryScreen";
 import { auth, db } from "../services/firebase";
 import { getIdTokenResult, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -53,6 +57,11 @@ export type RootStackParamList = {
   GiveBadgeScreen: { sitterId: string; sitterName: string };
   PasswordResetScreen: undefined;
   ResetPasswordScreen: { email?: string; oobCode?: string };
+  ChatListScreen: undefined;
+  StartChatScreen: undefined;
+  ChatScreen: { chatId: string; chatName?: string };
+  DiaryScreen: undefined;
+  AddDiaryEntryScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -143,6 +152,17 @@ export default function RootNavigator() {
             routes: [{ name: "PetSitterDashboardScreen" }],
           });
         }
+
+        // Register for Push Notifications
+        import("../services/notifications").then(async ({ registerForPushNotificationsAsync }) => {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            await import("firebase/firestore").then(({ updateDoc, doc }) => {
+              updateDoc(doc(db, "users", u.uid), { pushToken: token });
+            });
+          }
+        });
+
       } catch (error) {
         console.error("Error fetching user role:", error);
         setRole(null);
@@ -237,6 +257,12 @@ export default function RootNavigator() {
           name="AdminRequestsScreen"
           component={AdminRequestsScreen}
         />
+
+        {/* Features */}
+        <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+        <Stack.Screen name="ChatScreen" component={ChatScreen} />
+        <Stack.Screen name="DiaryScreen" component={DiaryScreen} />
+        <Stack.Screen name="AddDiaryEntryScreen" component={AddDiaryEntryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
