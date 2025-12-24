@@ -25,6 +25,7 @@ import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
 import { auth, db } from "../../services/firebase";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
+import NotificationsView from "../../components/Chat-Diary-Notification/NotificationsView";
 
 interface RequestCard {
   id: string;
@@ -156,339 +157,343 @@ const PetSitterDashboardScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: hp(4) }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header with Background Image */}
-        <ImageBackground
-          source={require("../../../assets/petsitter/petsitter.jpg")}
-          style={styles.headerBackground}
-          imageStyle={{
-            borderBottomLeftRadius: 24,
-            borderBottomRightRadius: 24,
-          }}
+      {activeTab === "Home" ? (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: hp(4) }]}
+          showsVerticalScrollIndicator={false}
         >
-          {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
-          <LinearGradient
-            colors={["rgba(86, 40, 7, 0.56)", "rgba(205, 127, 74, 0.28)"]}
-            start={{ x: 0.5, y: 1 }}
-            end={{ x: 0.5, y: 0 }}
-            style={StyleSheet.absoluteFillObject}
-            pointerEvents="none"
-          />
-          {/* Top Header: Logo | Sign Out */}
-          <View
-            style={[
-              styles.topHeaderBar,
-              {
-                paddingHorizontal: wp(5),
-                paddingTop: hp(2),
-                paddingBottom: hp(1),
-              },
-            ]}
+          {/* Header with Background Image */}
+          <ImageBackground
+            source={require("../../../assets/petsitter/petsitter.jpg")}
+            style={styles.headerBackground}
+            imageStyle={{
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+            }}
           >
-            <LogoCircle size={60} />
-
-            <Pressable
-              onPress={handleSignOut}
-              style={[
-                styles.signOutBtn,
-                { paddingHorizontal: wp(4), paddingVertical: hp(1) },
-              ]}
-            >
-              <Text style={[styles.signOutText, { fontSize: fonts.small }]}>
-                Sign Out
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Welcome Back Section */}
-          <View
-            style={[
-              styles.headerSection,
-              {
-                paddingHorizontal: wp(5),
-                paddingTop: hp(1),
-                paddingBottom: hp(2),
-                alignItems: "center",
-              },
-            ]}
-          >
-            <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
-              Welcome Back! 👋
-            </Text>
-
-            {/* Avatar */}
+            {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
+            <LinearGradient
+              colors={["rgba(86, 40, 7, 0.56)", "rgba(205, 127, 74, 0.28)"]}
+              start={{ x: 0.5, y: 1 }}
+              end={{ x: 0.5, y: 0 }}
+              style={StyleSheet.absoluteFillObject}
+              pointerEvents="none"
+            />
+            {/* Top Header: Logo | Sign Out */}
             <View
               style={[
-                styles.headerAvatar,
+                styles.topHeaderBar,
                 {
-                  width: getSafeDimensions(wp(20), 60, 80),
-                  height: getSafeDimensions(wp(20), 60, 80),
-                  marginTop: hp(2),
+                  paddingHorizontal: wp(5),
+                  paddingTop: hp(2),
+                  paddingBottom: hp(1),
                 },
               ]}
             >
-              <MaterialIcons
-                name="person"
-                size={getSafeDimensions(wp(12), 36, 48)}
-                color={COLORS.white}
-              />
+              <LogoCircle size={60} />
+
+              <Pressable
+                onPress={handleSignOut}
+                style={[
+                  styles.signOutBtn,
+                  { paddingHorizontal: wp(4), paddingVertical: hp(1) },
+                ]}
+              >
+                <Text style={[styles.signOutText, { fontSize: fonts.small }]}>
+                  Sign Out
+                </Text>
+              </Pressable>
             </View>
 
-            {/* Name and Email */}
-            <Text
+            {/* Welcome Back Section */}
+            <View
               style={[
-                styles.sitterName,
-                { fontSize: fonts.large, marginTop: spacing.md },
+                styles.headerSection,
+                {
+                  paddingHorizontal: wp(5),
+                  paddingTop: hp(1),
+                  paddingBottom: hp(2),
+                  alignItems: "center",
+                },
               ]}
             >
-              {sitterName}
-            </Text>
-            <Text
-              style={[
-                styles.sitterEmail,
-                { fontSize: fonts.small, marginTop: spacing.xs },
-              ]}
-            >
-              {sitterEmail}
-            </Text>
-          </View>
-        </ImageBackground>
+              <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
+                Welcome Back! 👋
+              </Text>
 
-        {/* Profile Card */}
-        <View
-          style={[
-            styles.profileCard,
-            { marginHorizontal: wp(5), marginVertical: hp(2), padding: wp(5) },
-          ]}
-        >
-          {/* Avatar + Rating */}
-          <View style={styles.profileTop}>
-            <View style={[styles.avatar, { width: 60, height: 60 }]}>
-              <MaterialIcons name="person" size={36} color={COLORS.white} />
+              {/* Avatar */}
+              <View
+                style={[
+                  styles.headerAvatar,
+                  {
+                    width: getSafeDimensions(wp(20), 60, 80),
+                    height: getSafeDimensions(wp(20), 60, 80),
+                    marginTop: hp(2),
+                  },
+                ]}
+              >
+                <MaterialIcons
+                  name="person"
+                  size={getSafeDimensions(wp(12), 36, 48)}
+                  color={COLORS.white}
+                />
+              </View>
+
+              {/* Name and Email */}
+              <Text
+                style={[
+                  styles.sitterName,
+                  { fontSize: fonts.large, marginTop: spacing.md },
+                ]}
+              >
+                {sitterName}
+              </Text>
+              <Text
+                style={[
+                  styles.sitterEmail,
+                  { fontSize: fonts.small, marginTop: spacing.xs },
+                ]}
+              >
+                {sitterEmail}
+              </Text>
             </View>
+          </ImageBackground>
 
-            <View style={styles.ratingContainer}>
-              <View style={styles.ratingRow}>
-                <FontAwesome name="star" size={20} color="#FFD700" />
-                <Text
-                  style={[
-                    styles.ratingText,
-                    { fontSize: fonts.large, marginLeft: spacing.sm },
-                  ]}
-                >
-                  {rating}
+          {/* Profile Card */}
+          <View
+            style={[
+              styles.profileCard,
+              { marginHorizontal: wp(5), marginVertical: hp(2), padding: wp(5) },
+            ]}
+          >
+            {/* Avatar + Rating */}
+            <View style={styles.profileTop}>
+              <View style={[styles.avatar, { width: 60, height: 60 }]}>
+                <MaterialIcons name="person" size={36} color={COLORS.white} />
+              </View>
+
+              <View style={styles.ratingContainer}>
+                <View style={styles.ratingRow}>
+                  <FontAwesome name="star" size={20} color="#FFD700" />
+                  <Text
+                    style={[
+                      styles.ratingText,
+                      { fontSize: fonts.large, marginLeft: spacing.sm },
+                    ]}
+                  >
+                    {rating}
+                  </Text>
+                </View>
+                <Text style={[styles.activeJobsText, { fontSize: fonts.medium }]}>
+                  {activeJobs} Active Jobs
                 </Text>
               </View>
-              <Text style={[styles.activeJobsText, { fontSize: fonts.medium }]}>
-                {activeJobs} Active Jobs
-              </Text>
+            </View>
+
+            {/* Badges */}
+            <View style={[styles.badgesContainer, { marginTop: spacing.lg }]}>
+              {badges.length > 0 ? (
+                badges.map((badge, index) => (
+                  <Pressable
+                    key={index}
+                    style={[
+                      styles.badge,
+                      { paddingHorizontal: wp(4), paddingVertical: hp(1.2) },
+                    ]}
+                  >
+                    <Text style={{ fontSize: 14, marginRight: spacing.sm }}>
+                      {badge.icon}
+                    </Text>
+                    <Text style={[styles.badgeText, { fontSize: fonts.small }]}>
+                      {badge.name} ({badge.count})
+                    </Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={[styles.noBadgesText, { fontSize: fonts.small }]}>
+                  No badges yet
+                </Text>
+              )}
             </View>
           </View>
 
-          {/* Badges */}
-          <View style={[styles.badgesContainer, { marginTop: spacing.lg }]}>
-            {badges.length > 0 ? (
-              badges.map((badge, index) => (
-                <Pressable
-                  key={index}
-                  style={[
-                    styles.badge,
-                    { paddingHorizontal: wp(4), paddingVertical: hp(1.2) },
-                  ]}
-                >
-                  <Text style={{ fontSize: 14, marginRight: spacing.sm }}>
-                    {badge.icon}
-                  </Text>
-                  <Text style={[styles.badgeText, { fontSize: fonts.small }]}>
-                    {badge.name} ({badge.count})
-                  </Text>
-                </Pressable>
-              ))
-            ) : (
-              <Text style={[styles.noBadgesText, { fontSize: fonts.small }]}>
-                No badges yet
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View
-          style={[
-            styles.actionButtonsContainer,
-            { paddingHorizontal: wp(5), gap: spacing.md },
-          ]}
-        >
-          <Pressable
+          {/* Action Buttons */}
+          <View
             style={[
-              styles.browseButton,
-              { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
+              styles.actionButtonsContainer,
+              { paddingHorizontal: wp(5), gap: spacing.md },
             ]}
-            onPress={() => navigation.navigate("BrowseRequestsScreen" as never)}
           >
-            <MaterialIcons
-              name="search"
-              size={20}
-              color={COLORS.white}
-              style={{ marginRight: spacing.sm }}
-            />
-            <Text
-              style={[styles.browseButtonText, { fontSize: fonts.regular }]}
-            >
-              Browse Requests
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.editButton,
-              { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
-            ]}
-            onPress={() => navigation.navigate("SitterProfileScreen" as never)}
-          >
-            <MaterialIcons
-              name="edit"
-              size={20}
-              color={COLORS.white}
-              style={{ marginRight: spacing.sm }}
-            />
-            <Text style={[styles.editButtonText, { fontSize: fonts.regular }]}>
-              Edit Profile
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Messages and Diary */}
-        <View style={{ flexDirection: "row", gap: spacing.md, paddingHorizontal: wp(5), marginTop: spacing.md }}>
-          <Pressable
-            style={[
-              styles.browseButton,
-              { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
-            ]}
-            onPress={() => navigation.navigate("ChatListScreen")}
-          >
-            <Text style={{ color: "#6B5344", fontWeight: "600" }}>💬 Messages</Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.browseButton,
-              { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
-            ]}
-            onPress={() => navigation.navigate("DiaryScreen")}
-          >
-            <Text style={{ color: "#6B5344", fontWeight: "600" }}>📖 Diary</Text>
-          </Pressable>
-        </View>
-
-        {/* Available Requests Section */}
-        <View
-          style={[
-            styles.requestsSection,
-            { paddingHorizontal: wp(5), marginTop: hp(3), marginBottom: hp(3) },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { fontSize: fonts.large }]}>
-              Available Requests
-            </Text>
             <Pressable
-              onPress={() =>
-                navigation.navigate("BrowseRequestsScreen" as never)
-              }
+              style={[
+                styles.browseButton,
+                { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
+              ]}
+              onPress={() => navigation.navigate("BrowseRequestsScreen" as never)}
             >
-              <Text style={[styles.viewAllLink, { fontSize: fonts.regular }]}>
-                View All
+              <MaterialIcons
+                name="search"
+                size={20}
+                color={COLORS.white}
+                style={{ marginRight: spacing.sm }}
+              />
+              <Text
+                style={[styles.browseButtonText, { fontSize: fonts.regular }]}
+              >
+                Browse Requests
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.editButton,
+                { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
+              ]}
+              onPress={() => navigation.navigate("SitterProfileScreen" as never)}
+            >
+              <MaterialIcons
+                name="edit"
+                size={20}
+                color={COLORS.white}
+                style={{ marginRight: spacing.sm }}
+              />
+              <Text style={[styles.editButtonText, { fontSize: fonts.regular }]}>
+                Edit Profile
               </Text>
             </Pressable>
           </View>
 
-          {/* Request Cards */}
+          {/* Messages and Diary */}
+          <View style={{ flexDirection: "row", gap: spacing.md, paddingHorizontal: wp(5), marginTop: spacing.md }}>
+            <Pressable
+              style={[
+                styles.browseButton,
+                { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
+              ]}
+              onPress={() => navigation.navigate("ChatListScreen")}
+            >
+              <Text style={{ color: "#6B5344", fontWeight: "600" }}>💬 Messages</Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.browseButton,
+                { paddingVertical: hp(1.8), backgroundColor: COLORS.white, borderWidth: 1, borderColor: "#6B5344" },
+              ]}
+              onPress={() => navigation.navigate("DiaryScreen")}
+            >
+              <Text style={{ color: "#6B5344", fontWeight: "600" }}>📖 Diary</Text>
+            </Pressable>
+          </View>
+
+          {/* Available Requests Section */}
           <View
             style={[
-              styles.requestCardsContainer,
-              { marginTop: spacing.lg, gap: spacing.md },
+              styles.requestsSection,
+              { paddingHorizontal: wp(5), marginTop: hp(3), marginBottom: hp(3) },
             ]}
           >
-            {availableRequests.map((request) => (
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { fontSize: fonts.large }]}>
+                Available Requests
+              </Text>
               <Pressable
-                key={request.id}
-                style={[
-                  styles.requestCard,
-                  { padding: wp(4), marginBottom: spacing.md },
-                ]}
+                onPress={() =>
+                  navigation.navigate("BrowseRequestsScreen" as never)
+                }
               >
-                <Text style={[styles.petName, { fontSize: fonts.large }]}>
-                  {request.petName}
+                <Text style={[styles.viewAllLink, { fontSize: fonts.regular }]}>
+                  View All
                 </Text>
-                <Text
-                  style={[
-                    styles.breed,
-                    { fontSize: fonts.regular, marginTop: spacing.xs },
-                  ]}
-                >
-                  {request.breed}
-                </Text>
-
-                {/* Date Section */}
-                <View
-                  style={[
-                    styles.requestDetail,
-                    {
-                      marginTop: spacing.md,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  <MaterialIcons
-                    name="date-range"
-                    size={18}
-                    color={COLORS.secondary}
-                  />
-                  <Text
-                    style={[
-                      styles.detailText,
-                      { fontSize: fonts.small, marginLeft: spacing.sm },
-                    ]}
-                  >
-                    {request.startDate} to {request.endDate}
-                  </Text>
-                </View>
-
-                {/* Location Section */}
-                <View
-                  style={[
-                    styles.requestDetail,
-                    {
-                      marginTop: spacing.sm,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  <MaterialIcons
-                    name="location-on"
-                    size={18}
-                    color={COLORS.secondary}
-                  />
-                  <Text
-                    style={[
-                      styles.detailText,
-                      { fontSize: fonts.small, marginLeft: spacing.sm },
-                    ]}
-                  >
-                    {request.location}
-                  </Text>
-                </View>
               </Pressable>
-            ))}
+            </View>
+
+            {/* Request Cards */}
+            <View
+              style={[
+                styles.requestCardsContainer,
+                { marginTop: spacing.lg, gap: spacing.md },
+              ]}
+            >
+              {availableRequests.map((request) => (
+                <Pressable
+                  key={request.id}
+                  style={[
+                    styles.requestCard,
+                    { padding: wp(4), marginBottom: spacing.md },
+                  ]}
+                >
+                  <Text style={[styles.petName, { fontSize: fonts.large }]}>
+                    {request.petName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.breed,
+                      { fontSize: fonts.regular, marginTop: spacing.xs },
+                    ]}
+                  >
+                    {request.breed}
+                  </Text>
+
+                  {/* Date Section */}
+                  <View
+                    style={[
+                      styles.requestDetail,
+                      {
+                        marginTop: spacing.md,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="date-range"
+                      size={18}
+                      color={COLORS.secondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { fontSize: fonts.small, marginLeft: spacing.sm },
+                      ]}
+                    >
+                      {request.startDate} to {request.endDate}
+                    </Text>
+                  </View>
+
+                  {/* Location Section */}
+                  <View
+                    style={[
+                      styles.requestDetail,
+                      {
+                        marginTop: spacing.sm,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="location-on"
+                      size={18}
+                      color={COLORS.secondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { fontSize: fonts.small, marginLeft: spacing.sm },
+                      ]}
+                    >
+                      {request.location}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <NotificationsView />
+      )}
 
       {/* Tab Bar */}
       <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />

@@ -1,37 +1,59 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
+import { auth, db } from "../../services/firebase";
 import { useNavigation } from "@react-navigation/native";
-import { COLORS } from "../utils/constants";
-import Header from "../components/Header";
+import { COLORS } from "../../utils/constants";
+import Header from "../../components/Header";
+
+import { useRoute } from "@react-navigation/native";
 
 const DiaryScreen = () => {
-    const [entries, setEntries] = useState([]);
-    const navigation = useNavigation();
+    const [entries, setEntries] = useState<any[]>([]);
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const user = auth.currentUser;
+    const { chatId } = route.params || {};
 
     useEffect(() => {
         if (!user) return;
-        // Simple query: all entries where user is owner or sitter (requires complex query or multiple queries or denormalization)
-        // For simplicity: fetch all and filter client side, or just fetch all 'diary_entries' (University project style)
-        // Better: where("relatedUsers", "array-contains", user.uid)
-        const q = query(
-            collection(db, "diary_entries"),
-            where("relatedUsers", "array-contains", user.uid),
-            orderBy("createdAt", "desc")
-        );
+
+        let q;
+        if (chatId) {
+            // Specific Chat Diary
+            q = query(
+                collection(db, "diary_entries"),
+                where("chatId", "==", chatId),
+                orderBy("createdAt", "desc")
+            );
+        } else {
+            // All user's diary entries
+            q = query(
+                collection(db, "diary_entries"),
+                where("relatedUsers", "array-contains", user.uid),
+                orderBy("createdAt", "desc")
+            );
+        }
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setEntries(
                 snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
             );
+        }, (error) => {
+            console.error("Diary snapshot error:", error);
+            if (error.code === 'permission-denied') {
+                alert("Permission Denied: Please update your Firestore Security Rules.");
+            } else if (error.code === 'failed-precondition') {
+                console.warn("Index missing. Check console for link.");
+                alert("Index Missing: Please check the console logs for a link to create the required Firestore index.");
+            }
         });
         return unsubscribe;
-    }, [user]);
+    }, [user, chatId]);
 
     return (
         <View style={styles.container}>
-            <Header title="Pet Daily Diary" />
+            <Header title={chatId ? "Chat Diary" : "All Diaries"} />
             <FlatList
                 data={entries}
                 keyExtractor={(item: any) => item.id}
@@ -55,10 +77,17 @@ const DiaryScreen = () => {
             />
 
             {/* FAB for Sitter to add entry */}
-            {/* In a real app we'd check role. Here we just show it or check auth.currentUser role if available */}
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => navigation.navigate("AddDiaryEntryScreen")}
+                onPress={() => {
+                    if (!chatId) {
+                        alert("Please select a chat to add a diary entry.");
+                        // Alternatively, allow picking a chat? But simplicity first.
+                        navigation.navigate("ChatListScreen"); // Go pick a chat
+                        return;
+                    }
+                    navigation.navigate("AddDiaryEntryScreen", { chatId });
+                }}
             >
                 <Text style={styles.fabText}>+</Text>
             </TouchableOpacity>

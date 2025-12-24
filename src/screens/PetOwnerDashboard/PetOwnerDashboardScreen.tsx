@@ -12,6 +12,8 @@ import {
 import Button from "../../components/Button";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
+import NotificationsView from "../../components/Chat-Diary-Notification/NotificationsView";
+
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
 import {
   useResponsive,
@@ -94,299 +96,303 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Card with background image */}
-        <ImageBackground
-          source={require("../../../assets/petowner/ownerbg.jpg")}
-          style={[
-            styles.headerCard,
-            {
-              marginTop: spacing.xxl,
-              marginHorizontal: 0,
-              paddingVertical: spacing.xl,
-              paddingHorizontal: wp(5),
-              borderRadius: BORDER_RADIUS.md,
-            },
-            getResponsiveShadow(8),
-          ]}
-          imageStyle={{ borderRadius: BORDER_RADIUS.md }}
-          resizeMode="cover"
+      {activeTab === "Home" ? (
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: spacing.xl }}
+          showsVerticalScrollIndicator={false}
         >
-          {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
-          <LinearGradient
-            colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]}
-            start={{ x: 0.5, y: 1 }}
-            end={{ x: 0.5, y: 0 }}
-            style={StyleSheet.absoluteFillObject}
-            pointerEvents="none"
-          />
-          {/* Top Icons Row */}
-          <View style={styles.headerRow}>
-            <LogoCircle size={60} />
-            <TouchableOpacity
-              onPress={handleSignOut}
-              style={{
-                paddingHorizontal: SPACING.md,
-                paddingVertical: SPACING.sm,
-                backgroundColor: "rgba(255,255,255,0.12)",
-                borderRadius: BORDER_RADIUS.full,
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.3)",
-              }}
-            >
-              <Text style={{ color: COLORS.white, fontWeight: "600" }}>
-                Sign Out
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text
+          {/* Header Card with background image */}
+          <ImageBackground
+            source={require("../../../assets/petowner/ownerbg.jpg")}
             style={[
-              styles.welcomeText,
-              { fontSize: fonts.xxxlarge, marginTop: spacing.md },
+              styles.headerCard,
+              {
+                marginTop: spacing.xxl,
+                marginHorizontal: 0,
+                paddingVertical: spacing.xl,
+                paddingHorizontal: wp(5),
+                borderRadius: BORDER_RADIUS.md,
+              },
+              getResponsiveShadow(8),
             ]}
+            imageStyle={{ borderRadius: BORDER_RADIUS.md }}
+            resizeMode="cover"
           >
-            Welcome Back! 👋
-          </Text>
-
-          {/* Profile Section */}
-          <View style={styles.profileWrap}>
-            <View
-              style={[
-                styles.profileCircle,
-                {
-                  width: profileSize,
-                  height: profileSize,
-                  borderRadius: profileSize / 2,
-                  borderWidth: 4,
-                  borderColor: "rgba(255, 255, 255, 0.4)",
-                },
-              ]}
+            {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
+            <LinearGradient
+              colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]}
+              start={{ x: 0.5, y: 1 }}
+              end={{ x: 0.5, y: 0 }}
+              style={StyleSheet.absoluteFillObject}
+              pointerEvents="none"
             />
+            {/* Top Icons Row */}
+            <View style={styles.headerRow}>
+              <LogoCircle size={60} />
+              <TouchableOpacity
+                onPress={handleSignOut}
+                style={{
+                  paddingHorizontal: SPACING.md,
+                  paddingVertical: SPACING.sm,
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  borderRadius: BORDER_RADIUS.full,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.3)",
+                }}
+              >
+                <Text style={{ color: COLORS.white, fontWeight: "600" }}>
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text
               style={[
-                styles.nameText,
-                { fontSize: fonts.large, marginTop: spacing.md },
+                styles.welcomeText,
+                { fontSize: fonts.xxxlarge, marginTop: spacing.md },
               ]}
             >
-              {userName}
+              Welcome Back! 👋
             </Text>
-            <Text style={[styles.emailText, { fontSize: fonts.regular }]}>
-              {userEmail}
-            </Text>
-          </View>
 
-          {/* Stats */}
-          <View style={[styles.statsRow, { marginTop: spacing.xl }]}>
-            {stats.map((s) => (
-              <Pressable
-                key={s.label}
-                onPress={() => { }}
-                style={{ flex: 1, minWidth: 0 }}
+            {/* Profile Section */}
+            <View style={styles.profileWrap}>
+              <View
+                style={[
+                  styles.profileCircle,
+                  {
+                    width: profileSize,
+                    height: profileSize,
+                    borderRadius: profileSize / 2,
+                    borderWidth: 4,
+                    borderColor: "rgba(255, 255, 255, 0.4)",
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.nameText,
+                  { fontSize: fonts.large, marginTop: spacing.md },
+                ]}
               >
-                <View
-                  style={[
-                    styles.statCard,
-                    {
-                      borderRadius: BORDER_RADIUS.lg,
-                      paddingVertical: spacing.lg,
-                      paddingHorizontal: spacing.lg,
-                      minHeight: isSmallDevice ? 88 : 100,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.statValue, { fontSize: fonts.xlarge }]}>
-                    {s.value}
-                  </Text>
-                  <Text style={[styles.statLabel, { fontSize: fonts.small }]}>
-                    {s.label}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </ImageBackground>
-
-        <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
-          <Button
-            title="+ Find a Pet Sitter"
-            variant="secondary"
-            fullWidth
-            onPress={() => navigation.navigate("PetRequestDetails")}
-            style={{
-              borderRadius: BORDER_RADIUS.lg,
-              minHeight: isSmallDevice ? 48 : 56,
-              marginBottom: spacing.md,
-            }}
-            textStyle={{ fontSize: fonts.medium, fontWeight: "600" }}
-          />
-          <View style={{ flexDirection: "row", gap: spacing.md }}>
-            <Button
-              title="💬 Messages"
-              variant="outline"
-              onPress={() => navigation.navigate("ChatListScreen")}
-              style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
-            />
-            <Button
-              title="📖 Diary"
-              variant="outline"
-              onPress={() => navigation.navigate("DiaryScreen")}
-              style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
-            />
-          </View>
-        </View>
-
-        {/* My Requests section */}
-        <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { fontSize: fonts.large, marginBottom: spacing.md },
-            ]}
-          >
-            My Requests
-          </Text>
-
-          {requests.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={[styles.emptyText, { fontSize: fonts.large }]}>
-                🐕
+                {userName}
               </Text>
-              <Text style={[styles.emptyTitle, { fontSize: fonts.medium }]}>
-                No requests yet
-              </Text>
-              <Text style={[styles.emptySubtitle, { fontSize: fonts.regular }]}>
-                Post a sitting request to get started
+              <Text style={[styles.emailText, { fontSize: fonts.regular }]}>
+                {userEmail}
               </Text>
             </View>
-          ) : (
-            requests.map((r, index) => (
-              <Pressable
-                key={r.id}
-                onPress={() =>
-                  setExpandedRequest(expandedRequest === r.id ? null : r.id)
-                }
-              >
-                <View
-                  style={[
-                    styles.requestCard,
-                    getResponsiveShadow(4),
-                    {
-                      borderRadius: BORDER_RADIUS.lg,
-                      padding: spacing.lg,
-                      marginTop: spacing.md,
-                      borderLeftWidth: 4,
-                      borderLeftColor: COLORS.primary,
-                      backgroundColor: COLORS.white,
-                    },
-                    expandedRequest === r.id && styles.requestCardExpanded,
-                  ]}
+
+            {/* Stats */}
+            <View style={[styles.statsRow, { marginTop: spacing.xl }]}>
+              {stats.map((s) => (
+                <Pressable
+                  key={s.label}
+                  onPress={() => { }}
+                  style={{ flex: 1, minWidth: 0 }}
                 >
-                  <View style={styles.requestHeader}>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.petName,
-                          { fontSize: fonts.large, marginBottom: spacing.xs },
-                        ]}
-                      >
-                        {r.petName}
-                      </Text>
-                      <Text
-                        style={[styles.breedText, { fontSize: fonts.regular }]}
-                      >
-                        {r.breed}
-                      </Text>
-                    </View>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusDot}>●</Text>
-                      <Text
-                        style={[styles.statusText, { fontSize: fonts.small }]}
-                      >
-                        {r.status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View
-                    style={{
-                      marginTop: spacing.md,
-                      borderTopWidth: 1,
-                      borderTopColor: "#E8E8E8",
-                      paddingTop: spacing.md,
-                    }}
-                  >
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>📅</Text>
-                      <Text
-                        style={[styles.infoText, { fontSize: fonts.regular }]}
-                      >
-                        {r.dateRange}
-                      </Text>
-                    </View>
-                    <View style={[styles.infoRow, { marginTop: spacing.md }]}>
-                      <Text style={styles.infoIcon}>📍</Text>
-                      <Text
-                        style={[styles.infoText, { fontSize: fonts.regular }]}
-                      >
-                        {r.location}
-                      </Text>
-                    </View>
-                  </View>
-
                   <View
                     style={[
-                      styles.cardActions,
+                      styles.statCard,
                       {
-                        marginTop: spacing.lg,
-                        paddingTop: spacing.md,
-                        borderTopWidth: 1,
-                        borderTopColor: "#E8E8E8",
+                        borderRadius: BORDER_RADIUS.lg,
+                        paddingVertical: spacing.lg,
+                        paddingHorizontal: spacing.lg,
+                        minHeight: isSmallDevice ? 88 : 100,
                       },
                     ]}
                   >
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        navigation.navigate("GiveBadgeScreen", {
-                          sitterId: "SITTER_ID_HERE",
-                          sitterName: "Sitter Name",
-                        })
-                      }
-                    >
-                      <Text
-                        style={[styles.actionText, { fontSize: fonts.small }]}
-                      >
-                        🏅 Give Badge
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionButton}>
-                      <Text
-                        style={[styles.actionText, { fontSize: fonts.small }]}
-                      >
-                        ✏️
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.deleteButton]}
-                    >
-                      <Text
-                        style={[styles.deleteText, { fontSize: fonts.small }]}
-                      >
-                        🗑️
-                      </Text>
-                    </TouchableOpacity>
+                    <Text style={[styles.statValue, { fontSize: fonts.xlarge }]}>
+                      {s.value}
+                    </Text>
+                    <Text style={[styles.statLabel, { fontSize: fonts.small }]}>
+                      {s.label}
+                    </Text>
                   </View>
-                </View>
-              </Pressable>
-            ))
-          )}
-        </View>
-      </ScrollView>
+                </Pressable>
+              ))}
+            </View>
+          </ImageBackground>
+
+          <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
+            <Button
+              title="+ Find a Pet Sitter"
+              variant="secondary"
+              fullWidth
+              onPress={() => navigation.navigate("PetRequestDetails")}
+              style={{
+                borderRadius: BORDER_RADIUS.lg,
+                minHeight: isSmallDevice ? 48 : 56,
+                marginBottom: spacing.md,
+              }}
+              textStyle={{ fontSize: fonts.medium, fontWeight: "600" }}
+            />
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
+              <Button
+                title="💬 Messages"
+                variant="outline"
+                onPress={() => navigation.navigate("ChatListScreen")}
+                style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
+              />
+              <Button
+                title="📖 Diary"
+                variant="outline"
+                onPress={() => navigation.navigate("DiaryScreen")}
+                style={{ flex: 1, borderRadius: BORDER_RADIUS.lg }}
+              />
+            </View>
+          </View>
+
+          {/* My Requests section */}
+          <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { fontSize: fonts.large, marginBottom: spacing.md },
+              ]}
+            >
+              My Requests
+            </Text>
+
+            {requests.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={[styles.emptyText, { fontSize: fonts.large }]}>
+                  🐕
+                </Text>
+                <Text style={[styles.emptyTitle, { fontSize: fonts.medium }]}>
+                  No requests yet
+                </Text>
+                <Text style={[styles.emptySubtitle, { fontSize: fonts.regular }]}>
+                  Post a sitting request to get started
+                </Text>
+              </View>
+            ) : (
+              requests.map((r, index) => (
+                <Pressable
+                  key={r.id}
+                  onPress={() =>
+                    setExpandedRequest(expandedRequest === r.id ? null : r.id)
+                  }
+                >
+                  <View
+                    style={[
+                      styles.requestCard,
+                      getResponsiveShadow(4),
+                      {
+                        borderRadius: BORDER_RADIUS.lg,
+                        padding: spacing.lg,
+                        marginTop: spacing.md,
+                        borderLeftWidth: 4,
+                        borderLeftColor: COLORS.primary,
+                        backgroundColor: COLORS.white,
+                      },
+                      expandedRequest === r.id && styles.requestCardExpanded,
+                    ]}
+                  >
+                    <View style={styles.requestHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[
+                            styles.petName,
+                            { fontSize: fonts.large, marginBottom: spacing.xs },
+                          ]}
+                        >
+                          {r.petName}
+                        </Text>
+                        <Text
+                          style={[styles.breedText, { fontSize: fonts.regular }]}
+                        >
+                          {r.breed}
+                        </Text>
+                      </View>
+                      <View style={styles.statusBadge}>
+                        <Text style={styles.statusDot}>●</Text>
+                        <Text
+                          style={[styles.statusText, { fontSize: fonts.small }]}
+                        >
+                          {r.status}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={{
+                        marginTop: spacing.md,
+                        borderTopWidth: 1,
+                        borderTopColor: "#E8E8E8",
+                        paddingTop: spacing.md,
+                      }}
+                    >
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoIcon}>📅</Text>
+                        <Text
+                          style={[styles.infoText, { fontSize: fonts.regular }]}
+                        >
+                          {r.dateRange}
+                        </Text>
+                      </View>
+                      <View style={[styles.infoRow, { marginTop: spacing.md }]}>
+                        <Text style={styles.infoIcon}>📍</Text>
+                        <Text
+                          style={[styles.infoText, { fontSize: fonts.regular }]}
+                        >
+                          {r.location}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.cardActions,
+                        {
+                          marginTop: spacing.lg,
+                          paddingTop: spacing.md,
+                          borderTopWidth: 1,
+                          borderTopColor: "#E8E8E8",
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() =>
+                          navigation.navigate("GiveBadgeScreen", {
+                            sitterId: "SITTER_ID_HERE",
+                            sitterName: "Sitter Name",
+                          })
+                        }
+                      >
+                        <Text
+                          style={[styles.actionText, { fontSize: fonts.small }]}
+                        >
+                          🏅 Give Badge
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actionButton}>
+                        <Text
+                          style={[styles.actionText, { fontSize: fonts.small }]}
+                        >
+                          ✏️
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.deleteButton]}
+                      >
+                        <Text
+                          style={[styles.deleteText, { fontSize: fonts.small }]}
+                        >
+                          🗑️
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      ) : (
+        <NotificationsView />
+      )}
 
       {/* Tab Bar */}
       <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />

@@ -30,10 +30,10 @@ import {
   PetRequestDetailsScreen,
   GiveBadgeScreen,
 } from "../screens/PetOwnerDashboard";
-import ChatListScreen from "../screens/ChatListScreen";
-import ChatScreen from "../screens/ChatScreen";
-import DiaryScreen from "../screens/DiaryScreen";
-import AddDiaryEntryScreen from "../screens/AddDiaryEntryScreen";
+import ChatListScreen from "../screens/Chat-Diary-Notifications/ChatListScreen";
+import ChatScreen from "../screens/Chat-Diary-Notifications/ChatScreen";
+import DiaryScreen from "../screens/Chat-Diary-Notifications/DiaryScreen";
+import AddDiaryEntryScreen from "../screens/Chat-Diary-Notifications/AddDiaryEntryScreen";
 import { auth, db } from "../services/firebase";
 import { getIdTokenResult, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -58,6 +58,7 @@ export type RootStackParamList = {
   PasswordResetScreen: undefined;
   ResetPasswordScreen: { email?: string; oobCode?: string };
   ChatListScreen: undefined;
+  StartChatScreen: undefined;
   ChatScreen: { chatId: string; chatName?: string };
   DiaryScreen: undefined;
   AddDiaryEntryScreen: undefined;
@@ -151,6 +152,17 @@ export default function RootNavigator() {
             routes: [{ name: "PetSitterDashboardScreen" }],
           });
         }
+
+        // Register for Push Notifications
+        import("../services/notifications").then(async ({ registerForPushNotificationsAsync }) => {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            await import("firebase/firestore").then(({ updateDoc, doc }) => {
+              updateDoc(doc(db, "users", u.uid), { pushToken: token });
+            });
+          }
+        });
+
       } catch (error) {
         console.error("Error fetching user role:", error);
         setRole(null);

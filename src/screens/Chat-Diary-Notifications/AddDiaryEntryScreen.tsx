@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
-import { useNavigation } from "@react-navigation/native";
-import { COLORS } from "../utils/constants";
-import Header from "../components/Header";
-// import * as ImagePicker from 'expo-image-picker'; // Commented out to avoid dep issues
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../services/firebase";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { COLORS } from "../../utils/constants";
+import Header from "../../components/Header";
+import { sendNotification } from "../../services/notifications";
 
 const AddDiaryEntryScreen = () => {
     const [note, setNote] = useState("");
@@ -13,6 +13,8 @@ const AddDiaryEntryScreen = () => {
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation();
+    const route = useRoute<any>();
+    const { chatId } = route.params || {};
 
     const moods = ["Happy", "Playful", "Sleepy", "Grumpy", "Hungry"];
 
@@ -26,17 +28,55 @@ const AddDiaryEntryScreen = () => {
             Alert.alert("Error", "Please add a note or photo");
             return;
         }
+        if (!chatId) {
+            // In real app we might allow adding general entries, but for now enforcing chat context
+            Alert.alert("Error", "No chat context found. Please add entry from a Chat.");
+            return;
+        }
         setLoading(true);
         try {
             const user = auth.currentUser;
+            let relatedUsers = [user?.uid];
+
+            if (chatId) {
+                // Fetch chat participants to share this entry with them
+                try {
+                    const chatSnap = await getDoc(doc(db, "chats", chatId));
+                    if (chatSnap.exists()) {
+                        const chatData = chatSnap.data();
+                        if (chatData.participants) {
+                            relatedUsers = chatData.participants;
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.error("Error fetching chat participants", fetchErr);
+                    // Fallback to just user
+                }
+            }
+
             await addDoc(collection(db, "diary_entries"), {
                 note,
                 mood,
                 photoUrl,
                 createdAt: serverTimestamp(),
                 createdBy: user?.uid,
-                relatedUsers: [user?.uid] // Add logic to include Owner ID here in real app
+                relatedUsers: relatedUsers,
+                chatId: chatId
             });
+
+            // Send Notification to other participants
+            const recipients = relatedUsers.filter(uid => uid !== user?.uid);
+            for (const recipientId of recipients) {
+                if (!recipientId) continue;
+                await sendNotification(
+                    recipientId,
+                    "New Diary Entry",
+                    `${user?.displayName || 'Sitter'} added a diary entry!`,
+                    "diary",
+                    chatId
+                );
+            }
+
             Alert.alert("Success", "Diary entry added!");
             navigation.goBack();
         } catch (error) {

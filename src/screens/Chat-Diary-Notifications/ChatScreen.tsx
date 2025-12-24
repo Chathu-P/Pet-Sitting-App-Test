@@ -20,15 +20,19 @@ import {
     doc,
     arrayUnion,
 } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
+import { auth, db } from "../../services/firebase";
 import { useRoute } from "@react-navigation/native";
-import { COLORS } from "../utils/constants";
-import Header from "../components/Header";
+import { COLORS } from "../../utils/constants";
+import Header from "../../components/Header";
+
+import { sendNotification } from "../../services/notifications";
+import { useNavigation } from "@react-navigation/native";
 
 const ChatScreen = () => {
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const route = useRoute<any>();
+    const navigation = useNavigation<any>();
     const { chatId, chatName } = route.params || {};
 
     useEffect(() => {
@@ -38,9 +42,13 @@ const ChatScreen = () => {
             orderBy("createdAt", "desc")
         );
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log(`ChatScreen: Received ${snapshot.docs.length} messages`); // Debug log
             setMessages(
                 snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
             );
+        }, (error) => {
+            console.error("ChatScreen snapshot error:", error);
+            alert("Error loading messages: " + error.message);
         });
         return unsubscribe;
     }, [chatId]);
@@ -63,6 +71,30 @@ const ChatScreen = () => {
                 name: chatName || "Chat"
             }, { merge: true });
 
+            // Send Notification to other participants
+            // We need to fetch the chat doc to know who the other participants are
+            try {
+                const importFirestore = await import("firebase/firestore");
+                const chatSnap = await importFirestore.getDoc(importFirestore.doc(db, "chats", chatId));
+                if (chatSnap.exists()) {
+                    const data = chatSnap.data();
+                    const participants = data.participants || [];
+                    const recipients = participants.filter((uid: string) => uid !== auth.currentUser?.uid);
+
+                    for (const recipientId of recipients) {
+                        await sendNotification(
+                            recipientId,
+                            "New Message",
+                            `${auth.currentUser?.displayName || 'User'} sent you a message`,
+                            "message",
+                            chatId
+                        );
+                    }
+                }
+            } catch (err) {
+                console.error("Error sending message notification:", err);
+            }
+
             setNewMessage("");
         } catch (error) {
             console.error("Error sending message: ", error);
@@ -75,6 +107,15 @@ const ChatScreen = () => {
             style={styles.container}
         >
             <Header title={chatName || "Chat"} />
+
+            {/* Unified Diary Link */}
+            <TouchableOpacity
+                style={styles.diaryLink}
+                onPress={() => navigation.navigate("DiaryScreen", { chatId })}
+            >
+                <Text style={styles.diaryLinkText}>📖 View Diary for this Chat</Text>
+            </TouchableOpacity>
+
             <FlatList
                 data={messages}
                 inverted
@@ -151,6 +192,19 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     sendButtonText: { color: "#fff", fontWeight: "bold" },
+    diaryLink: {
+        backgroundColor: COLORS.white,
+        padding: 10,
+        margin: 10,
+        borderRadius: 10,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: COLORS.secondary,
+    },
+    diaryLinkText: {
+        color: COLORS.secondary,
+        fontWeight: "bold",
+    },
 });
 
 export default ChatScreen;
