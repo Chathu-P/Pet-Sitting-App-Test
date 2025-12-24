@@ -261,9 +261,9 @@ const PetSitterSignupScreen: React.FC = () => {
                   height: isSmallDevice ? 44 : 48,
                   borderRadius: isSmallDevice ? 20 : 24,
                   paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.nmd,
                   fontSize: fonts.medium,
-                  marginBottom: spacing.md,
+                  marginBottom: spacing.nmd,
                 },
               ]}
             />
@@ -285,9 +285,9 @@ const PetSitterSignupScreen: React.FC = () => {
                   height: isSmallDevice ? 44 : 48,
                   borderRadius: isSmallDevice ? 20 : 24,
                   paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.nmd,
                   fontSize: fonts.medium,
-                  marginBottom: spacing.md,
+                  marginBottom: spacing.nmd,
                 },
               ]}
             />
@@ -307,9 +307,9 @@ const PetSitterSignupScreen: React.FC = () => {
                   height: isSmallDevice ? 44 : 48,
                   borderRadius: isSmallDevice ? 20 : 24,
                   paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.nmd,
                   fontSize: fonts.medium,
-                  marginBottom: spacing.md,
+                  marginBottom: spacing.nmd,
                 },
               ]}
             />
@@ -330,9 +330,9 @@ const PetSitterSignupScreen: React.FC = () => {
                   height: isSmallDevice ? 44 : 48,
                   borderRadius: isSmallDevice ? 20 : 24,
                   paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.nmd,
                   fontSize: fonts.medium,
-                  marginBottom: spacing.md,
+                  marginBottom: spacing.nmd,
                 },
               ]}
             />
@@ -355,9 +355,9 @@ const PetSitterSignupScreen: React.FC = () => {
                     height: isSmallDevice ? 44 : 48,
                     borderRadius: isSmallDevice ? 20 : 24,
                     paddingHorizontal: spacing.lg,
-                    paddingVertical: spacing.md,
+                    paddingVertical: spacing.nmd,
                     fontSize: fonts.medium,
-                    marginBottom: spacing.md,
+                    marginBottom: spacing.nmd,
                   },
                 ]}
               />
@@ -389,9 +389,9 @@ const PetSitterSignupScreen: React.FC = () => {
                     height: isSmallDevice ? 44 : 48,
                     borderRadius: isSmallDevice ? 20 : 24,
                     paddingHorizontal: spacing.lg,
-                    paddingVertical: spacing.md,
+                    paddingVertical: spacing.nmd,
                     fontSize: fonts.medium,
-                    marginBottom: spacing.md,
+                    marginBottom: spacing.nmd,
                   },
                 ]}
               />

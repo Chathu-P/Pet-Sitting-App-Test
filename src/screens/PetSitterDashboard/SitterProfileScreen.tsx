@@ -264,7 +264,7 @@ const SitterProfileScreen: React.FC = () => {
                 </View>
               </View>
 
-              <View style={{ marginTop: spacing.md }}>
+              <View style={{ marginTop: spacing.nmd }}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <MaterialIcons
                     name="workspace-premium"

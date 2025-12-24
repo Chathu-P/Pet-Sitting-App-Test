@@ -250,7 +250,7 @@ const PetSitterDashboardScreen: React.FC = () => {
             <Text
               style={[
                 styles.sitterName,
-                { fontSize: fonts.large, marginTop: spacing.md },
+                { fontSize: fonts.large, marginTop: spacing.nmd },
               ]}
             >
               {sitterName}
@@ -328,7 +328,7 @@ const PetSitterDashboardScreen: React.FC = () => {
         <View
           style={[
             styles.actionButtonsContainer,
-            { paddingHorizontal: wp(5), gap: spacing.md },
+            { paddingHorizontal: wp(5), gap: spacing.nmd },
           ]}
         >
           <Pressable
@@ -396,7 +396,7 @@ const PetSitterDashboardScreen: React.FC = () => {
           <View
             style={[
               styles.requestCardsContainer,
-              { marginTop: spacing.lg, gap: spacing.md },
+              { marginTop: spacing.lg, gap: spacing.nmd },
             ]}
           >
             {availableRequests.map((request) => (
@@ -404,7 +404,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                 key={request.id}
                 style={[
                   styles.requestCard,
-                  { padding: wp(4), marginBottom: spacing.md },
+                  { padding: wp(4), marginBottom: spacing.nmd },
                 ]}
               >
                 <Text style={[styles.petName, { fontSize: fonts.large }]}>
@@ -424,7 +424,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                   style={[
                     styles.requestDetail,
                     {
-                      marginTop: spacing.md,
+                      marginTop: spacing.nmd,
                       flexDirection: "row",
                       alignItems: "center",
                     },
