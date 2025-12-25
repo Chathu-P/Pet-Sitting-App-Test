@@ -169,7 +169,7 @@ const PetRequestDetailsScreen = ({ navigation }: any) => {
       case 4: return (
         <View>
           <Text style={[styles.formTitle, { fontSize: fonts.xlarge }]}>When?</Text>
-          <Text style={[styles.label, { marginTop: spacing.md }]}>Start Date</Text>
+          <Text style={[styles.label, { marginTop: spacing.nmd }]}>Start Date</Text>
           <View style={styles.dateDisplayBox}>
             {Platform.OS === 'web' && (
               <input type="date" style={styles.webInput} value={startDate.toISOString().split('T')[0]} onChange={(e) => setStartDate(new Date(e.target.value))} />
@@ -183,7 +183,7 @@ const PetRequestDetailsScreen = ({ navigation }: any) => {
             <DateTimePicker value={startDate} mode="date" display="default" minimumDate={new Date()} onChange={(e, d) => { setShowStartPicker(false); if(d) setStartDate(d); }} />
           )}
 
-          <Text style={[styles.label, { marginTop: spacing.md }]}>End Date</Text>
+          <Text style={[styles.label, { marginTop: spacing.nmd }]}>End Date</Text>
           <View style={styles.dateDisplayBox}>
             {Platform.OS === 'web' && (
               <input type="date" style={styles.webInput} value={endDate.toISOString().split('T')[0]} onChange={(e) => setEndDate(new Date(e.target.value))} />
