@@ -1,460 +1,195 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Pressable,
-  Alert,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  SafeAreaView, 
+  ScrollView, 
+  TouchableOpacity, 
+  ActivityIndicator,
+  Platform
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { doc, updateDoc, arrayUnion, increment } from "firebase/firestore";
-import { db, auth } from "../../services/firebase";
-import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
-import {
-  useResponsive,
-  useResponsiveSpacing,
-  useResponsiveFonts,
-} from "../../utils/responsive";
+import { useRoute } from "@react-navigation/native";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../../services/firebase";
 
-interface Badge {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  description: string;
-}
-
-const AVAILABLE_BADGES: Badge[] = [
-  {
-    id: "animal-lover",
-    name: "Animal Lover",
-    icon: "🐾",
-    color: "#FF6B9D",
-    description: "Shows exceptional love and care for animals",
-  },
-  {
-    id: "puppy-pro",
-    name: "Puppy Pro",
-    icon: "🐕",
-    color: "#FFB347",
-    description: "Expert at handling puppies and young dogs",
-  },
-  {
-    id: "cat-whisperer",
-    name: "Cat Whisperer",
-    icon: "🐱",
-    color: "#9B59B6",
-    description: "Has a special connection with cats",
-  },
-  {
-    id: "reliable-care",
-    name: "Reliable Care",
-    icon: "⭐",
-    color: "#F39C12",
-    description: "Consistently provides dependable care",
-  },
-  {
-    id: "great-communicator",
-    name: "Great Communicator",
-    icon: "💬",
-    color: "#3498DB",
-    description: "Excellent at keeping owners updated",
-  },
-  {
-    id: "calm-patient",
-    name: "Calm & Patient",
-    icon: "🧠",
-    color: "#82C4E5",
-    description: "Handles anxious or energetic pets gently",
-  },
-  {
-    id: "multi-pet-expert",
-    name: "Multi-Pet Expert",
-    icon: "🐾",
-    color: "#8E44AD",
-    description: "Successfully cared for more than one pet at a time",
-  },
-  {
-    id: "young-pet-specialist",
-    name: "Young Pet Specialist",
-    icon: "🍼",
-    color: "#F8B739",
-    description: "Great with puppies & kittens",
-  },
-  {
-    id: "senior-pet-friendly",
-    name: "Senior Pet Friendly",
-    icon: "🧓",
-    color: "#95A5A6",
-    description: "Extra care for older pets (mobility, meds, comfort)",
-  },
-  {
-    id: "follows-routine",
-    name: "Follows Routine Perfectly",
-    icon: "🎯",
-    color: "#E74C3C",
-    description: "Sticks closely to feeding, walking & sleep schedules",
-  },
-  {
-    id: "leash-walk-pro",
-    name: "Leash & Walk Pro",
-    icon: "🐕‍🦺",
-    color: "#27AE60",
-    description: "Excellent at safe and enjoyable walks",
-  },
-  {
-    id: "clean-feeding",
-    name: "Clean Feeding Habits",
-    icon: "🧺",
-    color: "#16A085",
-    description: "Maintains food/water areas hygienically",
-  },
-  {
-    id: "stress-free-care",
-    name: "Stress-Free Care",
-    icon: "🐾",
-    color: "#5DADE2",
-    description: "Keeps pets relaxed while owner is away",
-  },
-  {
-    id: "above-beyond",
-    name: "Above & Beyond",
-    icon: "💖",
-    color: "#EC407A",
-    description: "Did more than what was expected",
-  },
-  {
-    id: "home-aware",
-    name: "Home-Aware Caretaker",
-    icon: "🏡",
-    color: "#D35400",
-    description: "Takes care of pet while being mindful of owner's home",
-  },
+const BADGES = [
+  { id: "senior", label: "Senior Pet Friendly", icon: "👵" },
+  { id: "routine", label: "Follows Routine Perfectly", icon: "🎯" },
+  { id: "walk", label: "Leash & Walk Pro", icon: "🐕‍🦺" },
+  { id: "feeding", label: "Clean Feeding Habits", icon: "🧺" },
+  { id: "stress", label: "Stress-Free Care", icon: "🐾" },
+  { id: "beyond", label: "Above & Beyond", icon: "💖" },
+  { id: "home", label: "Home-Aware Caretaker", icon: "🏠" },
 ];
 
-const GiveBadgeScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { wp, hp } = useResponsive();
-  const spacing = useResponsiveSpacing();
-  const fonts = useResponsiveFonts();
-
-  const sitterId = route.params?.sitterId;
-  const sitterName = route.params?.sitterName || "Sitter";
-
+const GiveBadgeScreen = ({ navigation }: any) => {
+  const route = useRoute();
+  const { sitterId, requestId } = (route.params as any) || {};
+  
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleBadge = (badgeId: string) => {
-    setSelectedBadges((prev) =>
-      prev.includes(badgeId)
-        ? prev.filter((id) => id !== badgeId)
-        : [...prev, badgeId]
-    );
+  const toggleBadge = (id: string) => {
+    if (selectedBadges.includes(id)) {
+      setSelectedBadges(selectedBadges.filter(b => b !== id));
+    } else {
+      setSelectedBadges([...selectedBadges, id]);
+    }
   };
 
   const handleAwardBadges = async () => {
-    if (selectedBadges.length === 0) {
-      Alert.alert(
-        "No Badges Selected",
-        "Please select at least one badge to award."
-      );
-      return;
-    }
+    // Immediate log to check if touch works
+    console.log("Submit Clicked! Badges:", selectedBadges);
 
-    if (!sitterId) {
-      Alert.alert("Error", "Sitter information is missing.");
+    if (selectedBadges.length === 0) {
+      alert("Please select at least one badge!");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        Alert.alert("Error", "You must be logged in to award badges.");
-        return;
+      // 1. Update Request Status in Firestore
+      if (requestId) {
+        const requestRef = doc(db, "requests", requestId);
+        await updateDoc(requestRef, {
+          status: "Completed",
+          awardedBadges: selectedBadges
+        });
       }
 
-      const sitterRef = doc(db, "users", sitterId);
+      // 2. Add Badges to Sitter Profile
+      if (sitterId && sitterId !== "N/A") {
+        const sitterRef = doc(db, "users", sitterId);
+        await updateDoc(sitterRef, {
+          badges: arrayUnion(...selectedBadges)
+        });
+      }
 
-      // Update each selected badge
-      const badgeUpdates: any = {};
-      selectedBadges.forEach((badgeId) => {
-        badgeUpdates[`badges.${badgeId}.count`] = increment(1);
-        badgeUpdates[`badges.${badgeId}.awardedBy`] = arrayUnion(
-          currentUser.uid
-        );
-      });
+      alert("Success! Badges awarded.");
+      navigation.navigate("PetOwnerDashboardScreen"); //
 
-      await updateDoc(sitterRef, badgeUpdates);
-
-      Alert.alert(
-        "Badges Awarded! 🎉",
-        `You've successfully awarded ${selectedBadges.length} badge(s) to ${sitterName}.`,
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    } catch (error) {
-      console.error("Error awarding badges:", error);
-      Alert.alert("Error", "Failed to award badges. Please try again.");
+    } catch (error: any) {
+      console.error("Firebase Error:", error);
+      alert("Error: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { marginTop: hp(4) }]}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingHorizontal: wp(5),
-            paddingTop: hp(2),
-            paddingBottom: hp(2),
-          },
-        ]}
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={[styles.backBtn, { width: 36, height: 36 }]}
+    <SafeAreaView style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
         >
-          <MaterialIcons name="arrow-back" color={COLORS.white} size={20} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { fontSize: fonts.large }]}>
-          Give Badge to {sitterName}
-        </Text>
-        <View style={{ width: 36 }} />
+          <Text style={styles.headerText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Award Badges</Text>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={{ paddingBottom: hp(4) }}
-      >
-        {/* Instructions */}
-        <View
-          style={[
-            styles.instructionsCard,
-            {
-              marginHorizontal: wp(5),
-              marginTop: hp(2),
-              padding: wp(4),
-            },
-          ]}
-        >
-          <Text style={[styles.instructionsTitle, { fontSize: fonts.regular }]}>
-            Select badges to award
-          </Text>
-          <Text
-            style={[
-              styles.instructionsText,
-              { fontSize: fonts.small, marginTop: spacing.xs },
-            ]}
-          >
-            Choose one or more badges that best describe {sitterName}'s care.
-            These will appear on their profile.
-          </Text>
-        </View>
-
-        {/* Badge Grid */}
-        <View
-          style={[
-            styles.badgeGrid,
-            {
-              paddingHorizontal: wp(5),
-              marginTop: hp(3),
-              gap: spacing.md,
-            },
-          ]}
-        >
-          {AVAILABLE_BADGES.map((badge) => {
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.grid}>
+          {BADGES.map((badge) => {
             const isSelected = selectedBadges.includes(badge.id);
             return (
-              <Pressable
+              <TouchableOpacity
                 key={badge.id}
                 onPress={() => toggleBadge(badge.id)}
+                activeOpacity={0.7}
                 style={[
                   styles.badgeCard,
-                  {
-                    padding: wp(4),
-                    backgroundColor: isSelected ? badge.color : COLORS.white,
-                    borderColor: isSelected ? badge.color : "#E8E0D9",
-                  },
+                  isSelected && styles.selectedCard
                 ]}
               >
-                {isSelected && (
-                  <View style={styles.checkMark}>
-                    <MaterialIcons
-                      name="check-circle"
-                      size={24}
-                      color={COLORS.white}
-                    />
-                  </View>
-                )}
-                <Text style={[styles.badgeIcon, { fontSize: 40 }]}>
-                  {badge.icon}
+                <Text style={styles.icon}>{badge.icon}</Text>
+                <Text style={[styles.label, isSelected && styles.selectedLabel]}>
+                  {badge.label}
                 </Text>
-                <Text
-                  style={[
-                    styles.badgeName,
-                    {
-                      fontSize: fonts.regular,
-                      marginTop: spacing.sm,
-                      color: isSelected ? COLORS.white : COLORS.secondary,
-                    },
-                  ]}
-                >
-                  {badge.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.badgeDescription,
-                    {
-                      fontSize: fonts.small,
-                      marginTop: spacing.xs,
-                      color: isSelected
-                        ? "rgba(255, 255, 255, 0.9)"
-                        : "#7E7E7E",
-                    },
-                  ]}
-                >
-                  {badge.description}
-                </Text>
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </View>
-
-        {/* Award Button */}
-        <View
-          style={{
-            paddingHorizontal: wp(5),
-            marginTop: hp(4),
-          }}
-        >
-          <Pressable
-            style={[
-              styles.awardButton,
-              {
-                paddingVertical: hp(1.8),
-                backgroundColor:
-                  selectedBadges.length === 0 ? "#CCCCCC" : "#FF8C42",
-              },
-            ]}
-            onPress={handleAwardBadges}
-            disabled={selectedBadges.length === 0 || isSubmitting}
-          >
-            <Text style={[styles.awardButtonText, { fontSize: fonts.regular }]}>
-              {isSubmitting
-                ? "Awarding..."
-                : `Award ${selectedBadges.length} Badge${
-                    selectedBadges.length !== 1 ? "s" : ""
-                  }`}
-            </Text>
-          </Pressable>
-        </View>
       </ScrollView>
+
+      {/* FOOTER BUTTON - Using direct TouchableOpacity for web compatibility */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          onPress={handleAwardBadges}
+          activeOpacity={0.7}
+          disabled={isSubmitting}
+          style={[
+            styles.submitButton,
+            isSubmitting && { opacity: 0.5 }
+          ]}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>
+              Award {selectedBadges.length} Badges
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F6F4F2",
-  },
-  scroll: {
-    flex: 1,
-  },
-  header: {
-    backgroundColor: "#4A3C35",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    flexDirection: "row",
+  container: { flex: 1, backgroundColor: "#F9F6F2" },
+  header: { 
+    backgroundColor: "#4A3A32", 
+    padding: 20, 
+    flexDirection: "row", 
     alignItems: "center",
-    justifyContent: "space-between",
+    zIndex: 10 // Ensures header doesn't block clicks
   },
-  backBtn: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 18,
+  backButton: { padding: 10 },
+  headerText: { color: "#FFF", fontSize: 16 },
+  headerTitle: { color: "#FFF", fontSize: 18, fontWeight: "bold", marginLeft: 20 },
+  scrollContent: { padding: 20 },
+  grid: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    justifyContent: "space-between" 
+  },
+  badgeCard: { 
+    backgroundColor: "#FFF", 
+    padding: 15, 
+    borderRadius: 12, 
+    marginBottom: 15, 
     alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    color: COLORS.white,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "center",
-  },
-  instructionsCard: {
-    backgroundColor: "#FFF9E6",
-    borderRadius: BORDER_RADIUS.md,
+    width: '48%', // Flexible width for grid
     borderWidth: 1,
-    borderColor: "#FFE082",
+    borderColor: "#EEE",
+    cursor: 'pointer' // Force pointer cursor for web
   },
-  instructionsTitle: {
-    color: COLORS.secondary,
-    fontWeight: "700",
+  selectedCard: { 
+    backgroundColor: "#FF6B9D", 
+    borderColor: "#FF6B9D" 
   },
-  instructionsText: {
-    color: "#7E7E7E",
-    lineHeight: 20,
+  icon: { fontSize: 32 },
+  label: { marginTop: 8, textAlign: "center", fontWeight: "600", color: "#4A3A32" },
+  selectedLabel: { color: "#FFF" },
+  footer: { 
+    padding: 20, 
+    backgroundColor: "#FFF", 
+    borderTopWidth: 1, 
+    borderTopColor: "#EEE",
+    zIndex: 100 // Force footer to the front for touch events
   },
-  badgeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  badgeCard: {
-    width: "45%",
-    borderRadius: BORDER_RADIUS.sm,
-    borderWidth: 1.5,
+  submitButton: { 
+    backgroundColor: "#CD7F4A", 
+    padding: 18, 
+    borderRadius: 12, 
     alignItems: "center",
-    paddingVertical: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
-    position: "relative",
+    cursor: 'pointer' // Force pointer cursor for web
   },
-  checkMark: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-  },
-  badgeIcon: {
-    marginTop: 4,
-    fontSize: 32,
-  },
-  badgeName: {
-    fontWeight: "700",
-    textAlign: "center",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  badgeDescription: {
-    textAlign: "center",
-    lineHeight: 15,
-    fontSize: 11,
-    marginTop: 1,
-  },
-  awardButton: {
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  awardButtonText: {
-    color: COLORS.white,
-    fontWeight: "700",
-  },
+  submitButtonText: { color: "#FFF", fontWeight: "bold", fontSize: 16 }
 });
 
 export default GiveBadgeScreen;
