@@ -13,7 +13,7 @@ import {
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   useResponsive,
@@ -48,6 +48,7 @@ const PetSitterDashboardScreen: React.FC = () => {
   const [badges, setBadges] = useState<
     Array<{ name: string; count: number; icon: string }>
   >([]);
+  const [availableRequests, setAvailableRequests] = useState<RequestCard[]>([]);
   const rating = 4.8;
   const activeJobs = 0;
 
@@ -133,6 +134,30 @@ const PetSitterDashboardScreen: React.FC = () => {
     fetchUserData();
   }, []);
 
+  // Fetch available pet sitting requests
+  useEffect(() => {
+    const q = query(
+      collection(db, "requests"),
+      where("status", "==", "Open")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedRequests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        petName: doc.data().petName || "Unknown Pet",
+        breed: doc.data().breed || doc.data().petType || "Pet",
+        startDate: doc.data().startDate || "",
+        endDate: doc.data().endDate || "",
+        location: doc.data().location || doc.data().city || "No location",
+      }));
+      setAvailableRequests(fetchedRequests);
+    }, (error) => {
+      console.error("Error fetching requests:", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleSignOut = async () => {
     Alert.alert("Sign Out", "Do you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -150,17 +175,6 @@ const PetSitterDashboardScreen: React.FC = () => {
       },
     ]);
   };
-
-  const availableRequests: RequestCard[] = [
-    {
-      id: "1",
-      petName: "Max",
-      breed: "Golden Retriever",
-      startDate: "2025-12-20",
-      endDate: "2025-12-25",
-      location: "Downtown",
-    },
-  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
