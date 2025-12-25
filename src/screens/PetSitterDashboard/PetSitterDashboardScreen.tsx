@@ -67,15 +67,23 @@ const PetSitterDashboardScreen: React.FC = () => {
       try {
         const currentUser = auth.currentUser;
         if (currentUser) {
+          // Fetch basic user info
           const userDocRef = doc(db, "users", currentUser.uid);
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
             setSitterName(data?.fullName || "Sitter");
             setSitterEmail(data?.email || currentUser.email || "");
+          }
 
-            // Fetch badges
-            const badgeData = data?.badges || {};
+          // Fetch sitter profile from separate collection
+          const profileDocRef = doc(db, "sitterProfiles", currentUser.uid);
+          const profileDocSnap = await getDoc(profileDocRef);
+          if (profileDocSnap.exists()) {
+            const profileData = profileDocSnap.data();
+
+            // Fetch badges from sitter profile
+            const badgeData = profileData?.badges || {};
             const badgeMap: { [key: string]: { name: string; icon: string } } =
               {
                 "animal-lover": { name: "Animal Lover", icon: "🐾" },
@@ -242,7 +250,7 @@ const PetSitterDashboardScreen: React.FC = () => {
             <Text
               style={[
                 styles.sitterName,
-                { fontSize: fonts.large, marginTop: spacing.md },
+                { fontSize: fonts.large, marginTop: spacing.nmd },
               ]}
             >
               {sitterName}
@@ -320,7 +328,7 @@ const PetSitterDashboardScreen: React.FC = () => {
         <View
           style={[
             styles.actionButtonsContainer,
-            { paddingHorizontal: wp(5), gap: spacing.md },
+            { paddingHorizontal: wp(5), gap: spacing.nmd },
           ]}
         >
           <Pressable
@@ -388,7 +396,7 @@ const PetSitterDashboardScreen: React.FC = () => {
           <View
             style={[
               styles.requestCardsContainer,
-              { marginTop: spacing.lg, gap: spacing.md },
+              { marginTop: spacing.lg, gap: spacing.nmd },
             ]}
           >
             {availableRequests.map((request) => (
@@ -396,7 +404,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                 key={request.id}
                 style={[
                   styles.requestCard,
-                  { padding: wp(4), marginBottom: spacing.md },
+                  { padding: wp(4), marginBottom: spacing.nmd },
                 ]}
               >
                 <Text style={[styles.petName, { fontSize: fonts.large }]}>
@@ -416,7 +424,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                   style={[
                     styles.requestDetail,
                     {
-                      marginTop: spacing.md,
+                      marginTop: spacing.nmd,
                       flexDirection: "row",
                       alignItems: "center",
                     },

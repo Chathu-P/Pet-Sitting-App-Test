@@ -138,7 +138,7 @@ export const useResponsiveSpacing = () => {
     return {
       xs: Math.round(baseSpacing * 0.5 * scale),
       sm: Math.round(baseSpacing * scale),
-      md: Math.round(baseSpacing * 2 * scale),
+      nmd: Math.round(baseSpacing * 2 * scale),
       lg: Math.round(baseSpacing * 3 * scale),
       xl: Math.round(baseSpacing * 4 * scale),
       xxl: Math.round(baseSpacing * 6 * scale),
