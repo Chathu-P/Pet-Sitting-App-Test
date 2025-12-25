@@ -153,7 +153,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           <Text style={[styles.sectionTitle, { fontSize: fonts.large, marginTop: spacing.xl, marginBottom: spacing.sm }]}>My Requests</Text>
           
           {requests.map((r) => (
-            <View key={r.id} style={[styles.requestCard, { borderRadius: BORDER_RADIUS.lg, padding: spacing.lg, marginTop: spacing.md }]}>
+            <View key={r.id} style={[styles.requestCard, { borderRadius: BORDER_RADIUS.lg, padding: spacing.lg, marginTop: spacing.nmd }]}>
               <View style={styles.requestHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.petName, { fontSize: fonts.large }]}>{r.petName || "Unnamed Pet"}</Text>
