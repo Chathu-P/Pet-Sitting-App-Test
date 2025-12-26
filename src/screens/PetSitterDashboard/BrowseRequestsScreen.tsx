@@ -1,4 +1,66 @@
-import React, { useState } from "react";
+// Calculates best match percentage using trait overlap and weighted scoring
+export function calculateMatchPercentage(
+  sitter: {
+    traits?: string[];
+    petType?: string;
+    location?: string;
+    experience?: number;
+  },
+  request: {
+    traits?: string[];
+    petType?: string;
+    location?: string;
+    requiredExperience?: number;
+  }
+): number {
+  // 1. Trait Overlap
+  const traitMatches = (sitter.traits || []).filter((t: string) =>
+    (request.traits || []).includes(t)
+  ).length;
+  const traitScore =
+    request.traits && request.traits.length > 0
+      ? (traitMatches / request.traits.length) * 100
+      : 0;
+
+  // 2. Weighted Scoring
+  let weightedScore = 0;
+  let totalWeight = 0;
+
+  // Example weights
+  const weights = {
+    petType: 0.3,
+    location: 0.2,
+    experience: 0.2,
+    traits: 0.3,
+  };
+
+  // Pet type match
+  if (sitter.petType && request.petType && sitter.petType === request.petType)
+    weightedScore += weights.petType * 100;
+  totalWeight += weights.petType;
+
+  // Location match
+  if (
+    sitter.location &&
+    request.location &&
+    sitter.location === request.location
+  )
+    weightedScore += weights.location * 100;
+  totalWeight += weights.location;
+
+  // Experience match (example: years >= required)
+  if ((sitter.experience || 0) >= (request.requiredExperience || 0))
+    weightedScore += weights.experience * 100;
+  totalWeight += weights.experience;
+
+  // Trait score (from above)
+  weightedScore += weights.traits * traitScore;
+  totalWeight += weights.traits;
+
+  // Final percentage
+  return Math.round(weightedScore / totalWeight);
+}
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +73,8 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../services/firebase";
 import {
   useResponsive,
   useResponsiveSpacing,
@@ -21,44 +85,20 @@ interface MatchRequest {
   id: string;
   petName: string;
   breed: string;
-  ageYears: number;
-  matchPct: number; // 0-100
-  traits: string[]; // tags
+  age: string;
+  gender?: string;
+  petType?: string;
+  traits?: string[];
   startDate: string;
   endDate: string;
   location: string;
-  reasons: string[];
+  reasons?: string[];
+  status?: string;
+  feedingSchedule?: string;
+  walkRequirement?: boolean;
 }
 
-const mockRequests: MatchRequest[] = [
-  {
-    id: "1",
-    petName: "Max",
-    breed: "Golden Retriever",
-    ageYears: 3,
-    matchPct: 70,
-    traits: ["Friendly", "Playful", "Energetic"],
-    startDate: "2025-12-20",
-    endDate: "2025-12-25",
-    location: "Downtown Area",
-    reasons: [
-      "You can handle energetic dogs",
-      "Location and availability match",
-    ],
-  },
-  {
-    id: "2",
-    petName: "Luna",
-    breed: "Persian Cat",
-    ageYears: 2,
-    matchPct: 80,
-    traits: ["Shy", "Calm", "Affectionate"],
-    startDate: "2025-12-18",
-    endDate: "2025-12-22",
-    location: "Westside",
-    reasons: ["You can handle medical care", "Location and availability match"],
-  },
-];
+// Remove mockRequests, use state for requests
 
 const BrowseRequestsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -67,6 +107,64 @@ const BrowseRequestsScreen: React.FC = () => {
   const fonts = useResponsiveFonts();
 
   const [tab, setTab] = useState<"all" | "best">("all");
+  const [requests, setRequests] = useState<
+    (MatchRequest & { matchPct?: number })[]
+  >([]);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "requests"));
+        // Example sitter profile (replace with real sitter data)
+        const sitter = {
+          traits: ["Friendly", "Playful", "Energetic"],
+          petType: "dog",
+          location: "Downtown Area",
+          experience: 2,
+        };
+        const fetched = snapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+            const status = data.status || "Open";
+            
+            // Only include requests with status "Pending" or "Open"
+            if (status !== "Pending" && status !== "Open") {
+              return null;
+            }
+            
+            const requestObj: MatchRequest = {
+              id: doc.id,
+              petName: data.petName || "Unnamed Pet",
+              breed: data.breed || data.petType || "Pet",
+              age: data.age || "",
+              gender: data.gender || "",
+              petType: data.petType || "",
+              traits: data.traits || [],
+              startDate: data.startDate
+                ? new Date(data.startDate).toLocaleDateString()
+                : "",
+              endDate: data.endDate
+                ? new Date(data.endDate).toLocaleDateString()
+                : "",
+              location: data.location || data.city || "No location",
+              reasons: [], // You can add logic for reasons if needed
+              status: status,
+              feedingSchedule: data.feedingSchedule || "",
+              walkRequirement: data.walkRequirement !== undefined ? data.walkRequirement : true,
+            };
+            return {
+              ...requestObj,
+              matchPct: calculateMatchPercentage(sitter, requestObj),
+            };
+          })
+          .filter((request) => request !== null) as (MatchRequest & { matchPct?: number })[];
+        setRequests(fetched);
+      } catch (e) {
+        console.error("Error fetching requests:", e);
+      }
+    };
+    fetchRequests();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -106,7 +204,7 @@ const BrowseRequestsScreen: React.FC = () => {
           <View
             style={[
               styles.tabs,
-              { paddingHorizontal: wp(5), marginTop: hp(2), gap: spacing.md },
+              { paddingHorizontal: wp(5), marginTop: hp(2), gap: spacing.lg },
             ]}
           >
             <Pressable
@@ -141,11 +239,23 @@ const BrowseRequestsScreen: React.FC = () => {
 
           {/* Cards */}
           <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
-            {mockRequests.map((r) => (
-              <View
+            {(tab === "best"
+              ? [...requests]
+                  .sort((a, b) => (b.matchPct || 0) - (a.matchPct || 0))
+                  .slice(0, 3)
+              : requests
+            ).map((r) => (
+              <Pressable
                 key={r.id}
-                style={[styles.card, { padding: wp(4), marginBottom: hp(2) }]}
+                onPress={() =>
+                  (navigation as any).navigate("RequestDetailsScreen", {
+                    requestId: r.id,
+                  })
+                }
               >
+                <View
+                  style={[styles.card, { padding: wp(4), marginBottom: hp(2) }]}
+                >
                 {/* Top row */}
                 <View
                   style={{
@@ -159,7 +269,9 @@ const BrowseRequestsScreen: React.FC = () => {
                       {r.petName}
                     </Text>
                     <Text style={[styles.subTitle, { fontSize: fonts.small }]}>
-                      {r.breed} , {r.ageYears} years old
+                      {r.breed}
+                      {r.age ? `, ${r.age} years old` : ""}
+                      {r.gender ? `, ${r.gender}` : ""}
                     </Text>
                   </View>
                   <View
@@ -171,14 +283,16 @@ const BrowseRequestsScreen: React.FC = () => {
                     <MaterialIcons name="bolt" size={14} color="#7C3AED" />
                     <Text style={[styles.matchText, { fontSize: fonts.small }]}>
                       {" "}
-                      {r.matchPct}% Match
+                      {typeof r.matchPct === "number"
+                        ? `${r.matchPct}% Match`
+                        : "Match"}
                     </Text>
                   </View>
                 </View>
 
                 {/* Traits */}
-                <View style={[styles.traitsRow, { marginTop: spacing.md }]}>
-                  {r.traits.map((t, i) => (
+                <View style={[styles.traitsRow, { marginTop: spacing.lg }]}>
+                  {(r.traits || []).map((t, i) => (
                     <View
                       key={`${r.id}-t-${i}`}
                       style={[
@@ -196,7 +310,7 @@ const BrowseRequestsScreen: React.FC = () => {
                 </View>
 
                 {/* Dates */}
-                <View style={[styles.row, { marginTop: spacing.md }]}>
+                <View style={[styles.row, { marginTop: spacing.lg }]}>
                   <MaterialIcons name="date-range" size={18} color="#7C3AED" />
                   <Text
                     style={[
@@ -221,33 +335,38 @@ const BrowseRequestsScreen: React.FC = () => {
                   </Text>
                 </View>
 
-                {/* Why great match */}
+                {/* Care Requirements */}
                 <View style={{ marginTop: spacing.lg }}>
                   <Text style={[styles.whyTitle, { fontSize: fonts.small }]}>
-                    Why this is a great match:
+                    Care Requirements:
                   </Text>
-                  {r.reasons.map((rsn, i) => (
-                    <View
-                      key={`${r.id}-rsn-${i}`}
-                      style={[styles.row, { marginTop: 6 }]}
-                    >
-                      <MaterialIcons
-                        name="check-circle"
-                        size={18}
-                        color="#16a34a"
-                      />
+                  {r.feedingSchedule && (
+                    <View style={[styles.row, { marginTop: 6 }]}>
+                      <MaterialIcons name="schedule" size={16} color="#7C3AED" />
                       <Text
                         style={[
                           styles.reasonText,
-                          { fontSize: fonts.small, marginLeft: 8 },
+                          { fontSize: fonts.small, marginLeft: 6 },
                         ]}
                       >
-                        {rsn}
+                        Feeding: {r.feedingSchedule}
                       </Text>
                     </View>
-                  ))}
+                  )}
+                  <View style={[styles.row, { marginTop: 6 }]}>
+                    <MaterialIcons name="directions-walk" size={16} color="#7C3AED" />
+                    <Text
+                      style={[
+                        styles.reasonText,
+                        { fontSize: fonts.small, marginLeft: 6 },
+                      ]}
+                    >
+                      {r.walkRequirement ? "Walks required" : "No walks required"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+                </View>
+              </Pressable>
             ))}
           </View>
         </ScrollView>

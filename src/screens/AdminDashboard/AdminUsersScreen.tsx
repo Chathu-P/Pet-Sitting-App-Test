@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   Pressable,
   ActivityIndicator,
   ImageBackground,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { doc, updateDoc, collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase";
 import { COLORS, BORDER_RADIUS } from "../../utils/constants";
 import {
   useResponsive,
@@ -26,25 +29,8 @@ interface AdminUser {
   name: string;
   email: string;
   role: "owner" | "sitter";
-  active: boolean;
+  status: "active" | "blocked";
 }
-
-const mockUsers: AdminUser[] = [
-  {
-    id: "u1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "owner",
-    active: true,
-  },
-  {
-    id: "u2",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    role: "sitter",
-    active: true,
-  },
-];
 
 const AdminUsersScreen: React.FC = () => {
   const { wp, hp } = useResponsive();
@@ -52,13 +38,81 @@ const AdminUsersScreen: React.FC = () => {
   const fonts = useResponsiveFonts();
   const navigation = useNavigation<any>();
 
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [roleFilter, setRoleFilter] = useState<"all" | "owner" | "sitter">(
+    "all"
+  );
+
   const navigateHome = useCallback(() => {
     navigation.reset({ index: 0, routes: [{ name: "HomeScreen" }] });
   }, [navigation]);
 
   const { checking } = useAdminGuard(navigateHome);
 
-  if (checking) {
+  // Block user
+  const handleBlockUser = async (userId: string) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, { status: "blocked" });
+      // Update local state
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: "blocked" } : u))
+      );
+      Alert.alert("Success", "User has been blocked successfully");
+    } catch (error) {
+      console.error("Failed to block user:", error);
+      Alert.alert("Error", "Failed to block user. Please try again.");
+    }
+  };
+
+  // Unblock user
+  const handleUnblockUser = async (userId: string) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, { status: "active" });
+      // Update local state
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: "active" } : u))
+      );
+      Alert.alert("Success", "User has been unblocked successfully");
+    } catch (error) {
+      console.error("Failed to unblock user:", error);
+      Alert.alert("Error", "Failed to unblock user. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    if (checking) return;
+
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const userList: AdminUser[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          userList.push({
+            id: doc.id,
+            name: data.fullName || data.name || "(No Name)",
+            email: data.email || "",
+            role: data.role === "owner" ? "owner" : "sitter",
+            status: data.status || "active",
+          });
+        });
+        userList.sort((a, b) => a.name.localeCompare(b.name));
+        setUsers(userList);
+        setLoadingUsers(false);
+      },
+      (error) => {
+        console.error("Error fetching users:", error);
+        setLoadingUsers(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [checking]);
+
+  if (checking || loadingUsers) {
     return (
       <SafeAreaView style={styles.safe}>
         <View
@@ -69,6 +123,10 @@ const AdminUsersScreen: React.FC = () => {
       </SafeAreaView>
     );
   }
+
+  const filteredUsers = users.filter(
+    (u) => roleFilter === "all" || u.role === roleFilter
+  );
 
   return (
     <ImageBackground
@@ -92,65 +150,183 @@ const AdminUsersScreen: React.FC = () => {
                 Manage Users
               </Text>
 
-              <View style={{ marginTop: spacing.md }}>
-                {mockUsers.map((u) => (
-                  <View key={u.id} style={[styles.userRow, { padding: wp(3) }]}>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[styles.userName, { fontSize: fonts.regular }]}
-                      >
-                        {u.name}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.userEmail,
-                          { fontSize: fonts.small, marginTop: 4 },
-                        ]}
-                      >
-                        {u.email}
-                      </Text>
+              {/* Filter Buttons */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: spacing.lg,
+                }}
+              >
+                <Pressable
+                  style={[
+                    styles.filterBtn,
+                    roleFilter === "all" && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setRoleFilter("all")}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      roleFilter === "all" && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    All
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterBtn,
+                    roleFilter === "owner" && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setRoleFilter("owner")}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      roleFilter === "owner" && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Owners
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterBtn,
+                    roleFilter === "sitter" && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setRoleFilter("sitter")}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      roleFilter === "sitter" && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Sitters
+                  </Text>
+                </Pressable>
+              </View>
 
-                      {/* Role pill */}
-                      <View
-                        style={[
-                          styles.rolePill,
-                          u.role === "owner"
-                            ? styles.roleOwner
-                            : styles.roleSitter,
-                          { marginTop: 8 },
-                        ]}
-                      >
-                        <Text
-                          style={[styles.roleText, { fontSize: fonts.small }]}
-                        >
-                          {u.role}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Block Button */}
-                    <Pressable
-                      style={[
-                        styles.blockBtn,
-                        { paddingHorizontal: 14, paddingVertical: 10 },
-                      ]}
+              <View style={{ marginTop: spacing.lg }}>
+                {filteredUsers.length === 0 ? (
+                  <Text
+                    style={{
+                      color: COLORS.secondary,
+                      textAlign: "center",
+                      marginTop: 20,
+                    }}
+                  >
+                    No users found.
+                  </Text>
+                ) : (
+                  filteredUsers.map((u) => (
+                    <View
+                      key={u.id}
+                      style={[styles.userRow, { padding: wp(3) }]}
                     >
-                      <MaterialIcons
-                        name="block"
-                        size={18}
-                        color={COLORS.white}
-                      />
-                      <Text
-                        style={[
-                          styles.blockText,
-                          { fontSize: fonts.regular, marginLeft: 8 },
-                        ]}
-                      >
-                        Block
-                      </Text>
-                    </Pressable>
-                  </View>
-                ))}
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[styles.userName, { fontSize: fonts.regular }]}
+                        >
+                          {u.name}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.userEmail,
+                            { fontSize: fonts.small, marginTop: 4 },
+                          ]}
+                        >
+                          {u.email}
+                        </Text>
+
+                        {/* Role and Status Pills */}
+                        <View
+                          style={{ flexDirection: "row", gap: 8, marginTop: 8 }}
+                        >
+                          <View
+                            style={[
+                              styles.rolePill,
+                              u.role === "owner"
+                                ? styles.roleOwner
+                                : styles.roleSitter,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.roleText,
+                                { fontSize: fonts.small },
+                              ]}
+                            >
+                              {u.role}
+                            </Text>
+                          </View>
+
+                          {u.status === "blocked" && (
+                            <View style={styles.blockedPill}>
+                              <Text
+                                style={[
+                                  styles.blockedText,
+                                  { fontSize: fonts.small },
+                                ]}
+                              >
+                                Blocked
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Block/Unblock Button */}
+                      {u.status !== "blocked" ? (
+                        <Pressable
+                          style={[
+                            styles.blockBtn,
+                            { paddingHorizontal: 14, paddingVertical: 10 },
+                          ]}
+                          onPress={() => handleBlockUser(u.id)}
+                        >
+                          <MaterialIcons
+                            name="block"
+                            size={18}
+                            color={COLORS.white}
+                          />
+                          <Text
+                            style={[
+                              styles.blockText,
+                              { fontSize: fonts.regular, marginLeft: 8 },
+                            ]}
+                          >
+                            Block
+                          </Text>
+                        </Pressable>
+                      ) : (
+                        <Pressable
+                          style={[
+                            styles.unblockBtn,
+                            { paddingHorizontal: 14, paddingVertical: 10 },
+                          ]}
+                          onPress={() => handleUnblockUser(u.id)}
+                        >
+                          <MaterialIcons
+                            name="lock-open"
+                            size={18}
+                            color={COLORS.white}
+                          />
+                          <Text
+                            style={[
+                              styles.blockText,
+                              { fontSize: fonts.regular, marginLeft: 8 },
+                            ]}
+                          >
+                            Unblock
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))
+                )}
               </View>
             </View>
           </View>
@@ -222,6 +398,25 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: COLORS.secondary, fontWeight: "700" },
 
+  filterBtn: {
+    backgroundColor: "#EEE7E1",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 0,
+  },
+  filterBtnActive: {
+    backgroundColor: "#E8DFD6",
+  },
+  filterBtnText: {
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  filterBtnTextActive: {
+    color: "#4B5563",
+    fontWeight: "700",
+  },
+
   userRow: {
     backgroundColor: "#F8F7F6",
     borderRadius: 16,
@@ -242,8 +437,23 @@ const styles = StyleSheet.create({
   roleSitter: { backgroundColor: "#F4EAFF" },
   roleText: { color: COLORS.secondary, fontWeight: "700" },
 
+  blockedPill: {
+    alignSelf: "flex-start",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#FEE2E2",
+  },
+  blockedText: { color: "#DC2626", fontWeight: "700" },
+
   blockBtn: {
     backgroundColor: "#DC2626",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  unblockBtn: {
+    backgroundColor: "#22c55e",
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",

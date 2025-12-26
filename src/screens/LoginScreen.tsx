@@ -77,10 +77,6 @@ const LoginScreen: React.FC = () => {
       );
       const uid = userCred.user.uid;
 
-      // Check admin claim first
-      const tokenResult = await getIdTokenResult(userCred.user, true);
-      const isAdmin = !!tokenResult.claims?.admin;
-
       // Save email if remember me is checked
       if (remember) {
         await AsyncStorage.setItem("rememberMeEmail", email.trim());
@@ -91,23 +87,20 @@ const LoginScreen: React.FC = () => {
         await AsyncStorage.removeItem("rememberMeChecked");
       }
 
-      if (isAdmin) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "AdminDashboardScreen" as never }],
-        });
-        return;
-      }
-
-      // Fetch user role from Firestore for non-admins
+      // Fetch user role from Firestore
       const userDocRef = doc(db, "users", uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         const role = userDocSnap.data()?.role;
-        console.log("User role:", role);
+        console.log("User role:", role, "UID:", uid);
 
-        if (role === "owner") {
+        if (role === "admin") {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AdminDashboardScreen" as never }],
+          });
+        } else if (role === "owner") {
           navigation.reset({
             index: 0,
             routes: [{ name: "PetOwnerDashboardScreen" as never }],
@@ -199,7 +192,7 @@ const LoginScreen: React.FC = () => {
                 marginTop: hp(8),
                 marginBottom: hp(4),
                 paddingHorizontal: wp(5),
-                paddingVertical: spacing.md,
+                paddingVertical: spacing.lg,
                 backgroundColor: "rgba(255, 255, 255, 0.85)",
                 borderRadius: wp(6),
                 marginHorizontal: wp(4),

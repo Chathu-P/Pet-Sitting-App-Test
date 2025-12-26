@@ -1,38 +1,142 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
   ActivityIndicator,
-  Platform
+  Platform,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
-const BADGES = [
-  { id: "senior", label: "Senior Pet Friendly", icon: "👵" },
-  { id: "routine", label: "Follows Routine Perfectly", icon: "🎯" },
-  { id: "walk", label: "Leash & Walk Pro", icon: "🐕‍🦺" },
-  { id: "feeding", label: "Clean Feeding Habits", icon: "🧺" },
-  { id: "stress", label: "Stress-Free Care", icon: "🐾" },
-  { id: "beyond", label: "Above & Beyond", icon: "💖" },
-  { id: "home", label: "Home-Aware Caretaker", icon: "🏠" },
+export const BADGES: Array<{
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description: string;
+}> = [
+  {
+    id: "animal-lover",
+    name: "Animal Lover",
+    icon: "🐾",
+    color: "#FF6B9D",
+    description: "Shows exceptional love and care for animals",
+  },
+  {
+    id: "puppy-pro",
+    name: "Puppy Pro",
+    icon: "🐕",
+    color: "#FFB347",
+    description: "Expert at handling puppies and young dogs",
+  },
+  {
+    id: "cat-whisperer",
+    name: "Cat Whisperer",
+    icon: "🐱",
+    color: "#9B59B6",
+    description: "Has a special connection with cats",
+  },
+  {
+    id: "reliable-care",
+    name: "Reliable Care",
+    icon: "⭐",
+    color: "#F39C12",
+    description: "Consistently provides dependable care",
+  },
+  {
+    id: "great-communicator",
+    name: "Great Communicator",
+    icon: "💬",
+    color: "#3498DB",
+    description: "Excellent at keeping owners updated",
+  },
+  {
+    id: "calm-patient",
+    name: "Calm & Patient",
+    icon: "🧠",
+    color: "#82C4E5",
+    description: "Handles anxious or energetic pets gently",
+  },
+  {
+    id: "multi-pet-expert",
+    name: "Multi-Pet Expert",
+    icon: "🐾",
+    color: "#8E44AD",
+    description: "Successfully cared for more than one pet at a time",
+  },
+  {
+    id: "young-pet-specialist",
+    name: "Young Pet Specialist",
+    icon: "🍼",
+    color: "#F8B739",
+    description: "Great with puppies & kittens",
+  },
+  {
+    id: "senior-pet-friendly",
+    name: "Senior Pet Friendly",
+    icon: "🧓",
+    color: "#95A5A6",
+    description: "Extra care for older pets (mobility, meds, comfort)",
+  },
+  {
+    id: "follows-routine",
+    name: "Follows Routine Perfectly",
+    icon: "🎯",
+    color: "#E74C3C",
+    description: "Sticks closely to feeding, walking & sleep schedules",
+  },
+  {
+    id: "leash-walk-pro",
+    name: "Leash & Walk Pro",
+    icon: "🐕‍🦺",
+    color: "#27AE60",
+    description: "Excellent at safe and enjoyable walks",
+  },
+  {
+    id: "clean-feeding",
+    name: "Clean Feeding Habits",
+    icon: "🧺",
+    color: "#16A085",
+    description: "Maintains food/water areas hygienically",
+  },
+  {
+    id: "stress-free-care",
+    name: "Stress-Free Care",
+    icon: "🐾",
+    color: "#5DADE2",
+    description: "Keeps pets relaxed while owner is away",
+  },
+  {
+    id: "above-beyond",
+    name: "Above & Beyond",
+    icon: "💖",
+    color: "#EC407A",
+    description: "Did more than what was expected",
+  },
+  {
+    id: "home-aware",
+    name: "Home-Aware Caretaker",
+    icon: "🏡",
+    color: "#D35400",
+    description: "Takes care of pet while being mindful of owner's home",
+  },
 ];
 
 const GiveBadgeScreen = ({ navigation }: any) => {
   const route = useRoute();
   const { sitterId, requestId } = (route.params as any) || {};
-  
+
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleBadge = (id: string) => {
     if (selectedBadges.includes(id)) {
-      setSelectedBadges(selectedBadges.filter(b => b !== id));
+      setSelectedBadges(selectedBadges.filter((b) => b !== id));
     } else {
       setSelectedBadges([...selectedBadges, id]);
     }
@@ -55,7 +159,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
         const requestRef = doc(db, "requests", requestId);
         await updateDoc(requestRef, {
           status: "Completed",
-          awardedBadges: selectedBadges
+          awardedBadges: selectedBadges,
         });
       }
 
@@ -63,13 +167,12 @@ const GiveBadgeScreen = ({ navigation }: any) => {
       if (sitterId && sitterId !== "N/A") {
         const sitterRef = doc(db, "users", sitterId);
         await updateDoc(sitterRef, {
-          badges: arrayUnion(...selectedBadges)
+          badges: arrayUnion(...selectedBadges),
         });
       }
 
       alert("Success! Badges awarded.");
       navigation.navigate("PetOwnerDashboardScreen"); //
-
     } catch (error: any) {
       console.error("Firebase Error:", error);
       alert("Error: " + error.message);
@@ -82,8 +185,8 @@ const GiveBadgeScreen = ({ navigation }: any) => {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
           <Text style={styles.headerText}>← Back</Text>
@@ -102,13 +205,20 @@ const GiveBadgeScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
                 style={[
                   styles.badgeCard,
-                  isSelected && styles.selectedCard
+                  isSelected && [
+                    styles.selectedCard,
+                    { backgroundColor: badge.color, borderColor: badge.color },
+                  ],
                 ]}
               >
                 <Text style={styles.icon}>{badge.icon}</Text>
-                <Text style={[styles.label, isSelected && styles.selectedLabel]}>
-                  {badge.label}
+                <Text
+                  style={[styles.label, isSelected && styles.selectedLabel]}
+                >
+                  {badge.name}
                 </Text>
+                {/* Optionally show description below name */}
+                {/* <Text style={{ fontSize: 12, color: '#888', textAlign: 'center' }}>{badge.description}</Text> */}
               </TouchableOpacity>
             );
           })}
@@ -121,10 +231,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
           onPress={handleAwardBadges}
           activeOpacity={0.7}
           disabled={isSubmitting}
-          style={[
-            styles.submitButton,
-            isSubmitting && { opacity: 0.5 }
-          ]}
+          style={[styles.submitButton, isSubmitting && { opacity: 0.5 }]}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#FFF" />
@@ -141,55 +248,65 @@ const GiveBadgeScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9F6F2" },
-  header: { 
-    backgroundColor: "#4A3A32", 
-    padding: 20, 
-    flexDirection: "row", 
+  header: {
+    backgroundColor: "#4A3A32",
+    padding: 20,
+    flexDirection: "row",
     alignItems: "center",
-    zIndex: 10 // Ensures header doesn't block clicks
+    zIndex: 10, // Ensures header doesn't block clicks
   },
   backButton: { padding: 10 },
   headerText: { color: "#FFF", fontSize: 16 },
-  headerTitle: { color: "#FFF", fontSize: 18, fontWeight: "bold", marginLeft: 20 },
-  scrollContent: { padding: 20 },
-  grid: { 
-    flexDirection: "row", 
-    flexWrap: "wrap", 
-    justifyContent: "space-between" 
+  headerTitle: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 20,
   },
-  badgeCard: { 
-    backgroundColor: "#FFF", 
-    padding: 15, 
-    borderRadius: 12, 
-    marginBottom: 15, 
+  scrollContent: { padding: 20 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  badgeCard: {
+    backgroundColor: "#FFF",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
     alignItems: "center",
-    width: '48%', // Flexible width for grid
+    width: "48%", // Flexible width for grid
     borderWidth: 1,
     borderColor: "#EEE",
-    cursor: 'pointer' // Force pointer cursor for web
+    cursor: "pointer", // Force pointer cursor for web
   },
-  selectedCard: { 
-    backgroundColor: "#FF6B9D", 
-    borderColor: "#FF6B9D" 
+  selectedCard: {
+    backgroundColor: "#FF6B9D",
+    borderColor: "#FF6B9D",
   },
   icon: { fontSize: 32 },
-  label: { marginTop: 8, textAlign: "center", fontWeight: "600", color: "#4A3A32" },
+  label: {
+    marginTop: 8,
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#4A3A32",
+  },
   selectedLabel: { color: "#FFF" },
-  footer: { 
-    padding: 20, 
-    backgroundColor: "#FFF", 
-    borderTopWidth: 1, 
+  footer: {
+    padding: 20,
+    backgroundColor: "#FFF",
+    borderTopWidth: 1,
     borderTopColor: "#EEE",
-    zIndex: 100 // Force footer to the front for touch events
+    zIndex: 100, // Force footer to the front for touch events
   },
-  submitButton: { 
-    backgroundColor: "#CD7F4A", 
-    padding: 18, 
-    borderRadius: 12, 
+  submitButton: {
+    backgroundColor: "#CD7F4A",
+    padding: 18,
+    borderRadius: 12,
     alignItems: "center",
-    cursor: 'pointer' // Force pointer cursor for web
+    cursor: "pointer", // Force pointer cursor for web
   },
-  submitButtonText: { color: "#FFF", fontWeight: "bold", fontSize: 16 }
+  submitButtonText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
 });
 
 export default GiveBadgeScreen;

@@ -12,14 +12,14 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { signOut } from "firebase/auth";
-import { 
-  doc, 
-  getDoc, 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  deleteDoc 
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  deleteDoc,
 } from "firebase/firestore";
 
 // Services & Components
@@ -27,6 +27,7 @@ import { auth, db } from "../../services/firebase";
 import Button from "../../components/Button";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
+import { BADGES } from "./GiveBadgeScreen";
 
 // Utils
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
@@ -41,7 +42,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   const { wp } = useResponsive();
   const spacing = useResponsiveSpacing();
   const fonts = useResponsiveFonts();
-  
+
   // State
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("user@example.com");
@@ -79,14 +80,15 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRequests = snapshot.docs.map(doc => ({
+      const fetchedRequests = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        awardedBadges: doc.data().awardedBadges || [],
       }));
       setRequests(fetchedRequests);
     });
 
-    return () => unsubscribe(); 
+    return () => unsubscribe();
   }, []);
 
   // 2. HANDLERS
@@ -99,7 +101,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
       }
     };
 
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       if (window.confirm("Remove this pet request?")) performDelete();
     } else {
       Alert.alert("Delete", "Remove this request?", [
@@ -112,13 +114,19 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   // Helper to format the date sentence
   const formatDateSentence = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return "Dates not set yet";
-    
+
     try {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      
-      const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-      return `From ${start.toLocaleDateString('en-US', options)} to ${end.toLocaleDateString('en-US', options)}`;
+
+      const options: Intl.DateTimeFormatOptions = {
+        month: "short",
+        day: "numeric",
+      };
+      return `From ${start.toLocaleDateString(
+        "en-US",
+        options
+      )} to ${end.toLocaleDateString("en-US", options)}`;
     } catch (e) {
       return "Invalid dates";
     }
@@ -130,55 +138,170 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
         {/* Header Section */}
         <ImageBackground
           source={require("../../../assets/petowner/ownerbg.jpg")}
-          style={[styles.headerCard, { marginTop: spacing.xxl, paddingVertical: spacing.xl, paddingHorizontal: wp(5) }]}
+          style={[
+            styles.headerCard,
+            {
+              marginTop: spacing.xxl,
+              paddingVertical: spacing.xl,
+              paddingHorizontal: wp(5),
+            },
+          ]}
         >
-          <LinearGradient colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]} style={StyleSheet.absoluteFillObject} />
-          
+          <LinearGradient
+            colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]}
+            style={StyleSheet.absoluteFillObject}
+          />
+
           <View style={styles.headerRow}>
             <LogoCircle size={50} />
-            <TouchableOpacity onPress={() => signOut(auth).then(() => navigation.navigate("HomeScreen"))} style={styles.signOutBtn}>
+            <TouchableOpacity
+              onPress={() =>
+                signOut(auth).then(() => navigation.navigate("HomeScreen"))
+              }
+              style={styles.signOutBtn}
+            >
               <Text style={{ color: COLORS.white }}>Sign Out</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.profileWrap}>
-            <Text style={[styles.nameText, { fontSize: fonts.large, marginTop: spacing.xl }]}>{userName}</Text>
+            <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
+              Welcome Back! 👋
+            </Text>
+            <Text
+              style={[styles.nameText, { fontSize: fonts.large, marginTop: 4 }]}
+            >
+              {userName}
+            </Text>
             <Text style={styles.emailText}>{userEmail}</Text>
           </View>
         </ImageBackground>
 
-        <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
-          <Button title="+ Find a Pet Sitter" variant="secondary" fullWidth onPress={() => navigation.navigate("PetRequestDetails")} />
-          
-          <Text style={[styles.sectionTitle, { fontSize: fonts.large, marginTop: spacing.xl, marginBottom: spacing.sm }]}>My Requests</Text>
-          
+        {/* Main Content */}
+        <View style={{ paddingHorizontal: wp(5) }}>
+          <Button
+            title="+ Find a Pet Sitter"
+            variant="secondary"
+            fullWidth
+            style={{ marginTop: spacing.xl }}
+            onPress={() => navigation.navigate("PetRequestDetails")}
+          />
+
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                fontSize: fonts.large,
+                marginTop: spacing.xl,
+                marginBottom: spacing.sm,
+              },
+            ]}
+          >
+            My Requests
+          </Text>
+
           {requests.map((r) => (
-            <View key={r.id} style={[styles.requestCard, { borderRadius: BORDER_RADIUS.lg, padding: spacing.lg, marginTop: spacing.nmd }]}>
+            <View
+              key={r.id}
+              style={[
+                styles.requestCard,
+                {
+                  borderRadius: BORDER_RADIUS.lg,
+                  padding: spacing.lg,
+                  marginTop: spacing.nmd,
+                },
+              ]}
+            >
               <View style={styles.requestHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.petName, { fontSize: fonts.large }]}>{r.petName || "Unnamed Pet"}</Text>
-                  <Text style={[styles.breedText, { fontSize: fonts.regular, textTransform: 'capitalize' }]}>
+                  <Text style={[styles.petName, { fontSize: fonts.large }]}>
+                    {r.petName || "Unnamed Pet"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.breedText,
+                      { fontSize: fonts.regular, textTransform: "capitalize" },
+                    ]}
+                  >
                     {r.petType || "Pet"}
                   </Text>
                 </View>
-                
-                <TouchableOpacity 
-                  style={styles.statusBadge} 
-                  onPress={() => navigation.navigate("PetRequestDetails", { requestId: r.id, isEditing: true })}
+                <TouchableOpacity
+                  style={styles.statusBadge}
+                  onPress={() =>
+                    navigation.navigate("PetRequestDetails", {
+                      requestId: r.id,
+                      isEditing: true,
+                    })
+                  }
                 >
                   <Text style={styles.statusText}>{r.status || "Open"}</Text>
                 </TouchableOpacity>
               </View>
 
+              {/* Awarded Badges */}
+              {Array.isArray(r.awardedBadges) && r.awardedBadges.length > 0 && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    marginTop: 8,
+                    gap: 6,
+                  }}
+                >
+                  {r.awardedBadges.map((badgeId: string) => {
+                    const badge = BADGES.find((b) => b.id === badgeId);
+                    return badge ? (
+                      <View
+                        key={badgeId}
+                        style={{
+                          backgroundColor: badge.color,
+                          borderRadius: 12,
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginRight: 6,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <Text style={{ fontSize: 14, marginRight: 4 }}>
+                          {badge.icon}
+                        </Text>
+                        <Text style={{ color: "#fff", fontSize: 12 }}>
+                          {badge.name}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+                </View>
+              )}
+
               <View style={styles.divider} />
-              
-              {/* PROFESSIONAL DATE SENTENCE */}
+
+              {/* Date Information */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoIcon}>🗓️</Text>
                 <Text style={styles.infoText}>
                   {formatDateSentence(r.startDate, r.endDate)}
                 </Text>
               </View>
+
+              {/* Pet Age */}
+              {r.age && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoIcon}>🎂</Text>
+                  <Text style={styles.infoText}>Age: {r.age}</Text>
+                </View>
+              )}
+
+              {/* Pet Gender */}
+              {r.gender && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoIcon}>⚥</Text>
+                  <Text style={styles.infoText}>Gender: {r.gender}</Text>
+                </View>
+              )}
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoIcon}>📍</Text>
@@ -188,19 +311,21 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
               </View>
 
               <View style={styles.cardActions}>
-                <TouchableOpacity 
-                  style={styles.badgeBtn} 
-                  onPress={() => navigation.navigate("GiveBadgeScreen", { 
-                    requestId: r.id, 
-                    sitterId: r.assignedSitterId || "N/A", 
-                    sitterName: "Sitter" 
-                  })}
+                <TouchableOpacity
+                  style={styles.badgeBtn}
+                  onPress={() =>
+                    navigation.navigate("GiveBadgeScreen", {
+                      requestId: r.id,
+                      sitterId: r.assignedSitterId || "N/A",
+                      sitterName: "Sitter",
+                    })
+                  }
                 >
                   <Text style={styles.badgeBtnText}>🏅 Badge</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.deleteBtn} 
+                <TouchableOpacity
+                  style={styles.deleteBtn}
                   onPress={() => handleDeleteRequest(r.id)}
                 >
                   <Text style={styles.deleteBtnText}>🗑️</Text>
@@ -210,7 +335,11 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           ))}
         </View>
       </ScrollView>
-      <TabBar tabs={tabs} activeTab={activeTab} onTabPress={(k) => setActiveTab(k as any)} />
+      <TabBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabPress={(k) => setActiveTab(k as any)}
+      />
     </SafeAreaView>
   );
 };
@@ -219,27 +348,70 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1 },
   headerCard: { overflow: "hidden", borderRadius: BORDER_RADIUS.md },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  signOutBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20 },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  signOutBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 20,
+  },
   profileWrap: { alignItems: "center" },
   nameText: { color: COLORS.white, fontWeight: "700" },
   emailText: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
   sectionTitle: { color: COLORS.text, fontWeight: "700" },
-  requestCard: { backgroundColor: COLORS.white, borderLeftWidth: 5, borderLeftColor: COLORS.primary, elevation: 3, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  requestHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: 'center' },
+  requestCard: {
+    backgroundColor: COLORS.white,
+    borderLeftWidth: 5,
+    borderLeftColor: COLORS.primary,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  requestHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   petName: { color: COLORS.text, fontWeight: "700" },
   breedText: { color: COLORS.textLight, marginTop: 2 },
-  statusBadge: { backgroundColor: COLORS.secondary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  statusBadge: {
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
   statusText: { color: COLORS.white, fontWeight: "700", fontSize: 12 },
   divider: { height: 1, backgroundColor: "#F0F0F0", marginVertical: 12 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   infoIcon: { fontSize: 14, marginRight: 8 },
   infoText: { color: COLORS.textLight, fontSize: 13 },
-  cardActions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 12, gap: 10, alignItems: 'center' },
-  badgeBtn: { borderWidth: 1, borderColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 12,
+    gap: 10,
+    alignItems: "center",
+  },
+  badgeBtn: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  greeting: {
+    color: COLORS.white,
+    fontWeight: "700",
+  },
   badgeBtnText: { color: COLORS.primary, fontWeight: "600", fontSize: 12 },
   deleteBtn: { backgroundColor: "#FFE8E8", padding: 8, borderRadius: 8 },
-  deleteBtnText: { color: "#FF6B6B", fontSize: 16 }
+  deleteBtnText: { color: "#FF6B6B", fontSize: 16 },
 });
 
 export default PetOwnerDashboardScreen;

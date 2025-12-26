@@ -17,6 +17,7 @@ import {
   PetSitterDashboardScreen,
   BrowseRequestsScreen,
   SitterProfileScreen,
+  RequestDetailsScreen,
 } from "../screens/PetSitterDashboard";
 import {
   AdminDashboardScreen,
@@ -31,7 +32,7 @@ import {
   GiveBadgeScreen,
 } from "../screens/PetOwnerDashboard";
 import { auth, db } from "../services/firebase";
-import { getIdTokenResult, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 export type RootStackParamList = {
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   PetSitterDashboardScreen: undefined;
   BrowseRequestsScreen: undefined;
   SitterProfileScreen: undefined;
+  RequestDetailsScreen: { requestId: string };
   AdminDashboardScreen: undefined;
   AdminUsersScreen: undefined;
   AdminRequestsScreen: undefined;
@@ -100,11 +102,12 @@ export default function RootNavigator() {
     );
 
     const unsub = onAuthStateChanged(auth, async (u) => {
+      console.log("onAuthStateChanged user:", u ? u.uid : null);
       if (!u) {
         setCurrentUser(null);
         setRole(null);
         setInitializing(false);
-        // Navigate to HomeScreen if not authenticated
+        console.log("No user, navigating to HomeScreen");
         navigationRef.current?.reset({
           index: 0,
           routes: [{ name: "HomeScreen" }],
@@ -113,38 +116,43 @@ export default function RootNavigator() {
       }
       setCurrentUser(u);
       try {
-        // Check custom claims for admin flag
-        const tokenResult = await getIdTokenResult(u, true);
-        const isAdmin = !!tokenResult.claims?.admin;
+        // Use Firestore role for admin and all users
+        const snap = await getDoc(doc(db, "users", u.uid));
+        console.log("USER DOC EXISTS:", snap.exists());
+        console.log("USER DOC DATA:", snap.data());
+        const data = snap.exists() ? (snap.data() as any) : null;
+        const userRole =
+          (data?.role as "owner" | "sitter" | "admin" | undefined) ?? null;
+        console.log("ROLE:", userRole);
+        setRole(userRole);
 
-        if (isAdmin) {
-          setRole("admin");
+        if (userRole === "admin") {
+          console.log("Navigating to AdminDashboardScreen");
           navigationRef.current?.reset({
             index: 0,
             routes: [{ name: "AdminDashboardScreen" }],
           });
-          return;
-        }
-
-        // Non-admin: fetch Firestore role
-        const snap = await getDoc(doc(db, "users", u.uid));
-        const data = snap.exists() ? (snap.data() as any) : null;
-        const userRole = (data?.role as "owner" | "sitter" | undefined) ?? null;
-        setRole(userRole);
-
-        if (userRole === "owner") {
+        } else if (userRole === "owner") {
+          console.log("Navigating to PetOwnerDashboardScreen");
           navigationRef.current?.reset({
             index: 0,
             routes: [{ name: "PetOwnerDashboardScreen" }],
           });
         } else if (userRole === "sitter") {
+          console.log("Navigating to PetSitterDashboardScreen");
           navigationRef.current?.reset({
             index: 0,
             routes: [{ name: "PetSitterDashboardScreen" }],
           });
+        } else {
+          console.log("Unknown role, navigating to HomeScreen");
+          navigationRef.current?.reset({
+            index: 0,
+            routes: [{ name: "HomeScreen" }],
+          });
         }
       } catch (error) {
-        console.error("Error fetching user role:", error);
+        console.error("ROLE FETCH ERROR:", error);
         setRole(null);
         navigationRef.current?.reset({
           index: 0,
@@ -219,6 +227,10 @@ export default function RootNavigator() {
         <Stack.Screen
           name="SitterProfileScreen"
           component={SitterProfileScreen}
+        />
+        <Stack.Screen
+          name="RequestDetailsScreen"
+          component={RequestDetailsScreen}
         />
         <Stack.Screen
           name="PetRequestDetails"

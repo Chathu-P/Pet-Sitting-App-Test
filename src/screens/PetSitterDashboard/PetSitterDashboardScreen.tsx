@@ -13,7 +13,14 @@ import {
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   useResponsive,
@@ -44,13 +51,15 @@ const PetSitterDashboardScreen: React.FC = () => {
   // State for user data
   const [sitterName, setSitterName] = useState("Sitter");
   const [sitterEmail, setSitterEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [activeTab, setActiveTab] = useState<"Home" | "Notifications">("Home");
   const [badges, setBadges] = useState<
     Array<{ name: string; count: number; icon: string }>
   >([]);
   const [availableRequests, setAvailableRequests] = useState<RequestCard[]>([]);
   const rating = 4.8;
-  const activeJobs = 0;
+  const activeJobs = availableRequests.length;
 
   // Tab configuration
   const tabs = [
@@ -75,6 +84,8 @@ const PetSitterDashboardScreen: React.FC = () => {
             const data = userDocSnap.data();
             setSitterName(data?.fullName || "Sitter");
             setSitterEmail(data?.email || currentUser.email || "");
+            setAddress(data?.address || "");
+            setPhone(data?.phone || "");
           }
 
           // Fetch sitter profile from separate collection
@@ -134,26 +145,41 @@ const PetSitterDashboardScreen: React.FC = () => {
     fetchUserData();
   }, []);
 
-  // Fetch available pet sitting requests
+  // Fetch accepted requests for this sitter
   useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     const q = query(
       collection(db, "requests"),
-      where("status", "==", "Open")
+      where("status", "==", "Accepted"),
+      where("assignedSitterId", "==", currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRequests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        petName: doc.data().petName || "Unknown Pet",
-        breed: doc.data().breed || doc.data().petType || "Pet",
-        startDate: doc.data().startDate || "",
-        endDate: doc.data().endDate || "",
-        location: doc.data().location || doc.data().city || "No location",
-      }));
-      setAvailableRequests(fetchedRequests);
-    }, (error) => {
-      console.error("Error fetching requests:", error);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedRequests = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            petName: data.petName || "Unknown Pet",
+            breed: data.breed || data.petType || "Pet",
+            startDate: data.startDate
+              ? new Date(data.startDate).toLocaleDateString()
+              : "",
+            endDate: data.endDate
+              ? new Date(data.endDate).toLocaleDateString()
+              : "",
+            location: data.location || data.city || "No location",
+          };
+        });
+        setAvailableRequests(fetchedRequests);
+      },
+      (error) => {
+        console.error("Error fetching accepted requests:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -287,26 +313,50 @@ const PetSitterDashboardScreen: React.FC = () => {
             { marginHorizontal: wp(5), marginVertical: hp(2), padding: wp(5) },
           ]}
         >
-          {/* Avatar + Rating */}
+          {/* Address, Phone, and Active Jobs */}
           <View style={styles.profileTop}>
-            <View style={[styles.avatar, { width: 60, height: 60 }]}>
-              <MaterialIcons name="person" size={36} color={COLORS.white} />
-            </View>
-
-            <View style={styles.ratingContainer}>
-              <View style={styles.ratingRow}>
-                <FontAwesome name="star" size={20} color="#FFD700" />
-                <Text
-                  style={[
-                    styles.ratingText,
-                    { fontSize: fonts.large, marginLeft: spacing.sm },
-                  ]}
-                >
-                  {rating}
-                </Text>
-              </View>
-              <Text style={[styles.activeJobsText, { fontSize: fonts.medium }]}>
-                {activeJobs} Active Jobs
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.detailText,
+                  {
+                    fontSize: fonts.regular,
+                    color: COLORS.white,
+                    marginBottom: 4,
+                  },
+                ]}
+              >
+                <MaterialIcons
+                  name="location-on"
+                  size={18}
+                  color={COLORS.white}
+                />{" "}
+                Address: {address || "N/A"}
+              </Text>
+              <Text
+                style={[
+                  styles.detailText,
+                  {
+                    fontSize: fonts.regular,
+                    color: COLORS.white,
+                    marginBottom: 4,
+                  },
+                ]}
+              >
+                <MaterialIcons name="phone" size={18} color={COLORS.white} />{" "}
+                Phone: {phone || "N/A"}
+              </Text>
+              <Text
+                style={[
+                  styles.detailText,
+                  {
+                    fontSize: fonts.regular,
+                    color: COLORS.white,
+                  },
+                ]}
+              >
+                <MaterialIcons name="work" size={18} color={COLORS.white} />{" "}
+                Active Jobs: {activeJobs}
               </Text>
             </View>
           </View>
@@ -319,7 +369,11 @@ const PetSitterDashboardScreen: React.FC = () => {
                   key={index}
                   style={[
                     styles.badge,
-                    { paddingHorizontal: wp(4), paddingVertical: hp(1.2) },
+                    {
+                      paddingHorizontal: wp(4),
+                      paddingVertical: hp(1.2),
+                      marginRight: index !== badges.length - 1 ? 12 : 0,
+                    },
                   ]}
                 >
                   <Text style={{ fontSize: 14, marginRight: spacing.sm }}>
@@ -393,7 +447,7 @@ const PetSitterDashboardScreen: React.FC = () => {
         >
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { fontSize: fonts.large }]}>
-              Available Requests
+              My Accepted Requests
             </Text>
             <Pressable
               onPress={() =>
@@ -401,91 +455,124 @@ const PetSitterDashboardScreen: React.FC = () => {
               }
             >
               <Text style={[styles.viewAllLink, { fontSize: fonts.regular }]}>
-                View All
+                Browse More
               </Text>
             </Pressable>
           </View>
 
           {/* Request Cards */}
           <View
-            style={[
-              styles.requestCardsContainer,
-              { marginTop: spacing.lg, gap: spacing.nmd },
-            ]}
+            style={[styles.requestCardsContainer, { marginTop: spacing.lg }]}
           >
-            {availableRequests.map((request) => (
-              <Pressable
-                key={request.id}
-                style={[
-                  styles.requestCard,
-                  { padding: wp(4), marginBottom: spacing.nmd },
-                ]}
+            {availableRequests.length === 0 ? (
+              <View
+                style={{
+                  padding: spacing.lg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Text style={[styles.petName, { fontSize: fonts.large }]}>
-                  {request.petName}
-                </Text>
+                <MaterialIcons name="inbox" size={48} color="#9CA3AF" />
                 <Text
                   style={[
-                    styles.breed,
-                    { fontSize: fonts.regular, marginTop: spacing.xs },
+                    styles.detailText,
+                    {
+                      fontSize: fonts.regular,
+                      marginTop: spacing.lg,
+                      color: "#6B7280",
+                      textAlign: "center",
+                    },
                   ]}
                 >
-                  {request.breed}
+                  No accepted requests yet. Browse requests to get started!
                 </Text>
-
-                {/* Date Section */}
-                <View
+              </View>
+            ) : (
+              availableRequests.map((request, index) => (
+                <Pressable
+                  key={request.id}
                   style={[
-                    styles.requestDetail,
+                    styles.requestCard,
                     {
-                      marginTop: spacing.nmd,
-                      flexDirection: "row",
-                      alignItems: "center",
+                      padding: wp(4),
+                      marginBottom:
+                        index !== availableRequests.length - 1
+                          ? spacing.nmd
+                          : 0,
                     },
                   ]}
+                  onPress={() =>
+                    (navigation as any).navigate("RequestDetailsScreen", {
+                      requestId: request.id,
+                    })
+                  }
                 >
-                  <MaterialIcons
-                    name="date-range"
-                    size={18}
-                    color={COLORS.secondary}
-                  />
+                  <Text style={[styles.petName, { fontSize: fonts.large }]}>
+                    {request.petName}
+                  </Text>
                   <Text
                     style={[
-                      styles.detailText,
-                      { fontSize: fonts.small, marginLeft: spacing.sm },
+                      styles.breed,
+                      { fontSize: fonts.regular, marginTop: spacing.xs },
                     ]}
                   >
-                    {request.startDate} to {request.endDate}
+                    {request.breed}
                   </Text>
-                </View>
 
-                {/* Location Section */}
-                <View
-                  style={[
-                    styles.requestDetail,
-                    {
-                      marginTop: spacing.sm,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  <MaterialIcons
-                    name="location-on"
-                    size={18}
-                    color={COLORS.secondary}
-                  />
-                  <Text
+                  {/* Date Section */}
+                  <View
                     style={[
-                      styles.detailText,
-                      { fontSize: fonts.small, marginLeft: spacing.sm },
+                      styles.requestDetail,
+                      {
+                        marginTop: spacing.nmd,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      },
                     ]}
                   >
-                    {request.location}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
+                    <MaterialIcons
+                      name="date-range"
+                      size={18}
+                      color={COLORS.secondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { fontSize: fonts.small, marginLeft: spacing.sm },
+                      ]}
+                    >
+                      {request.startDate} to {request.endDate}
+                    </Text>
+                  </View>
+
+                  {/* Location Section */}
+                  <View
+                    style={[
+                      styles.requestDetail,
+                      {
+                        marginTop: spacing.sm,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="location-on"
+                      size={18}
+                      color={COLORS.secondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { fontSize: fonts.small, marginLeft: spacing.sm },
+                      ]}
+                    >
+                      {request.location}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
@@ -586,7 +673,6 @@ const styles = StyleSheet.create({
   },
   badgesContainer: {
     flexDirection: "row",
-    gap: 12,
   },
   badge: {
     backgroundColor: "#D946EF",
@@ -649,6 +735,7 @@ const styles = StyleSheet.create({
   },
   requestCardsContainer: {
     marginBottom: 8,
+    flexDirection: "column",
   },
   requestCard: {
     backgroundColor: COLORS.white,

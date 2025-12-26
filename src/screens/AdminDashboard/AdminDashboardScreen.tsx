@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -31,20 +31,108 @@ const AdminDashboardScreen: React.FC = () => {
 
   const { checking } = useAdminGuard(navigateHome);
 
-  const stats = {
-    totalUsers: 2,
-    totalRequests: 2,
-    active: 2,
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalRequests: 0,
+    active: 0,
     completed: 0,
-  };
+  });
 
-  const analytics = [
-    { label: "Pet Owners", value: 1, max: 2, color: "#a855f7" },
-    { label: "Pet Sitters", value: 1, max: 2, color: "#ec4899" },
-    { label: "Open Requests", value: 2, max: 4, color: "#22c5b8" },
-    { label: "Assigned Requests", value: 0, max: 4, color: "#9ca3af" },
-    { label: "Completed", value: 0, max: 4, color: "#9ca3af" },
-  ];
+  useEffect(() => {
+    let unsubUsers: (() => void) | undefined;
+    let unsubRequests: (() => void) | undefined;
+    // Dynamically import Firestore to avoid circular deps
+    (async () => {
+      const { collection, onSnapshot } = await import("firebase/firestore");
+      const { db } = await import("../../services/firebase");
+      // Users
+      unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        setStats((prev) => ({ ...prev, totalUsers: snapshot.size }));
+      });
+      // Requests
+      unsubRequests = onSnapshot(collection(db, "requests"), (snapshot) => {
+        let active = 0;
+        let completed = 0;
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.status === "completed") completed++;
+          else if (data.status === "open" || data.status === "assigned")
+            active++;
+        });
+        setStats((prev) => ({
+          ...prev,
+          totalRequests: snapshot.size,
+          active,
+          completed,
+        }));
+      });
+    })();
+    return () => {
+      if (unsubUsers) unsubUsers();
+      if (unsubRequests) unsubRequests();
+    };
+  }, []);
+
+  const [analytics, setAnalytics] = useState([
+    { label: "Pet Owners", value: 0, max: 0, color: "#a855f7" },
+    { label: "Pet Sitters", value: 0, max: 0, color: "#ec4899" },
+    { label: "Open Requests", value: 0, max: 0, color: "#22c5b8" },
+    { label: "Assigned Requests", value: 0, max: 0, color: "#9ca3af" },
+    { label: "Completed", value: 0, max: 0, color: "#9ca3af" },
+  ]);
+
+  useEffect(() => {
+    let unsubUsers: (() => void) | undefined;
+    let unsubRequests: (() => void) | undefined;
+    (async () => {
+      const { collection, onSnapshot } = await import("firebase/firestore");
+      const { db } = await import("../../services/firebase");
+      // Users
+      unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        let owners = 0;
+        let sitters = 0;
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.role === "owner") owners++;
+          else if (data.role === "sitter") sitters++;
+        });
+        setAnalytics((prev) => {
+          const updated = [...prev];
+          updated[0].value = owners;
+          updated[0].max = snapshot.size;
+          updated[1].value = sitters;
+          updated[1].max = snapshot.size;
+          return updated;
+        });
+      });
+      // Requests
+      unsubRequests = onSnapshot(collection(db, "requests"), (snapshot) => {
+        let open = 0;
+        let assigned = 0;
+        let completed = 0;
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.status === "open") open++;
+          else if (data.status === "assigned") assigned++;
+          else if (data.status === "completed") completed++;
+        });
+        setAnalytics((prev) => {
+          const updated = [...prev];
+          updated[2].value = open;
+          updated[2].max = snapshot.size;
+          updated[3].value = assigned;
+          updated[3].max = snapshot.size;
+          updated[4].value = completed;
+          updated[4].max = snapshot.size;
+          return updated;
+        });
+      });
+    })();
+    return () => {
+      if (unsubUsers) unsubUsers();
+      if (unsubRequests) unsubRequests();
+    };
+  }, []);
 
   const ProgressRow = ({
     label,
@@ -59,7 +147,7 @@ const AdminDashboardScreen: React.FC = () => {
   }) => {
     const pct = Math.min(100, Math.round((value / Math.max(1, max)) * 100));
     return (
-      <View style={{ marginTop: spacing.md }}>
+      <View style={{ marginTop: spacing.lg }}>
         <View
           style={{
             flexDirection: "row",

@@ -27,9 +27,9 @@ const RequestDetailsHeader: React.FC<RequestDetailsHeaderProps> = ({
         styles.headerTop,
         {
           marginTop: spacing.xxl,
-          marginBottom: spacing.md,
+          marginBottom: spacing.lg,
           paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
+          paddingVertical: spacing.lg,
         },
       ]}
     >

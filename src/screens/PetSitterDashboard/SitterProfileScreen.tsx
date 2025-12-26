@@ -31,13 +31,17 @@ const SitterProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sitterName, setSitterName] = useState("Sitter");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [rating, setRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
   const [yearsOfExperience, setYearsOfExperience] = useState(0);
   const [experienceDescription, setExperienceDescription] = useState("");
   const [availability, setAvailability] = useState("");
   const [aboutMe, setAboutMe] = useState("");
-  const [badges, setBadges] = useState<Array<{ name: string; icon: string }>>([]);
+  const [badges, setBadges] = useState<Array<{ name: string; icon: string }>>(
+    []
+  );
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const allSkills = [
@@ -68,13 +72,15 @@ const SitterProfileScreen: React.FC = () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setSitterName(userData?.fullName || "Sitter");
+          setAddress(userData?.address || "");
+          setPhone(userData?.phone || "");
         }
 
         // Fetch sitter profile from separate collection
         const profileDoc = await getDoc(doc(db, "sitterProfiles", userId));
         if (profileDoc.exists()) {
           const profileData = profileDoc.data();
-          
+
           // Set profile data
           setRating(profileData?.profile?.rating || 0);
           setTotalReviews(profileData?.profile?.totalReviews || 0);
@@ -166,6 +172,17 @@ const SitterProfileScreen: React.FC = () => {
         { merge: true }
       );
 
+      // Save basic info to users collection
+      await setDoc(
+        doc(db, "users", userId),
+        {
+          fullName: sitterName,
+          address: address,
+          phone: phone,
+        },
+        { merge: true }
+      );
+
       Alert.alert("Success", "Profile updated successfully!");
       navigation.goBack();
     } catch (error) {
@@ -190,9 +207,13 @@ const SitterProfileScreen: React.FC = () => {
           style={styles.backgroundImage}
           resizeMode="cover"
         >
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
             <ActivityIndicator size="large" color="#7C3AED" />
-            <Text style={{ marginTop: 10, color: COLORS.secondary }}>Loading profile...</Text>
+            <Text style={{ marginTop: 10, color: COLORS.secondary }}>
+              Loading profile...
+            </Text>
           </View>
         </ImageBackground>
       </SafeAreaView>
@@ -233,7 +254,7 @@ const SitterProfileScreen: React.FC = () => {
             <View style={{ width: 36 }} />
           </View>
 
-          {/* Profile Summary Card */}
+          {/* Profile Summary Card & Editable Info */}
           <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
             <View style={[styles.card, { padding: wp(4) }]}>
               <View
@@ -264,6 +285,60 @@ const SitterProfileScreen: React.FC = () => {
                 </View>
               </View>
 
+              {/* Editable Fields: Full Name, Address, Phone */}
+              <View style={{ marginTop: spacing.nmd }}>
+                <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
+                  Full Name
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { fontSize: fonts.regular, marginTop: 8 },
+                  ]}
+                  placeholder="Enter your full name"
+                  placeholderTextColor="#999"
+                  value={sitterName}
+                  onChangeText={setSitterName}
+                />
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { fontSize: fonts.medium, marginTop: 12 },
+                  ]}
+                >
+                  Address
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { fontSize: fonts.regular, marginTop: 8 },
+                  ]}
+                  placeholder="Enter your address"
+                  placeholderTextColor="#999"
+                  value={address}
+                  onChangeText={setAddress}
+                />
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { fontSize: fonts.medium, marginTop: 12 },
+                  ]}
+                >
+                  Phone
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { fontSize: fonts.regular, marginTop: 8 },
+                  ]}
+                  placeholder="Enter your phone number"
+                  placeholderTextColor="#999"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+
               <View style={{ marginTop: spacing.nmd }}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <MaterialIcons
@@ -283,7 +358,10 @@ const SitterProfileScreen: React.FC = () => {
                 {badges.length > 0 ? (
                   <View style={[styles.badgesRow, { marginTop: 8 }]}>
                     {badges.slice(0, 2).map((badge, index) => (
-                      <View key={index} style={[styles.badge, styles.badgeAccent]}>
+                      <View
+                        key={index}
+                        style={[styles.badge, styles.badgeAccent]}
+                      >
                         <MaterialIcons
                           name={badge.icon as any}
                           size={14}
@@ -301,7 +379,12 @@ const SitterProfileScreen: React.FC = () => {
                     ))}
                   </View>
                 ) : (
-                  <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 8 }]}>
+                  <Text
+                    style={[
+                      styles.helperText,
+                      { fontSize: fonts.small, marginTop: 8 },
+                    ]}
+                  >
                     No badges earned yet
                   </Text>
                 )}
@@ -315,7 +398,12 @@ const SitterProfileScreen: React.FC = () => {
               <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
                 Experience
               </Text>
-              <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 6 }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { fontSize: fonts.small, marginTop: 6 },
+                ]}
+              >
                 Years of Experience
               </Text>
               <TextInput
@@ -325,14 +413,21 @@ const SitterProfileScreen: React.FC = () => {
                 ]}
                 placeholder="e.g., 5"
                 placeholderTextColor="#999"
-                value={yearsOfExperience > 0 ? yearsOfExperience.toString() : ""}
+                value={
+                  yearsOfExperience > 0 ? yearsOfExperience.toString() : ""
+                }
                 onChangeText={(text) => {
                   const num = parseInt(text) || 0;
                   setYearsOfExperience(num);
                 }}
                 keyboardType="numeric"
               />
-              <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 12 }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { fontSize: fonts.small, marginTop: 12 },
+                ]}
+              >
                 Description
               </Text>
               <TextInput
