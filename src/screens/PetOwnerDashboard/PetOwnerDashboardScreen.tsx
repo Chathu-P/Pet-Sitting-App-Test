@@ -140,7 +140,9 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
               <Text style={{ color: COLORS.white }}>Sign Out</Text>
             </TouchableOpacity>
           </View>
-
+              <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
+              Welcome Back! 👋
+            </Text>
           <View style={styles.profileWrap}>
             <Text style={[styles.nameText, { fontSize: fonts.large, marginTop: spacing.xl }]}>{userName}</Text>
             <Text style={styles.emailText}>{userEmail}</Text>
@@ -217,6 +219,11 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
+  greeting: {
+    color: COLORS.white,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   container: { flex: 1 },
   headerCard: { overflow: "hidden", borderRadius: BORDER_RADIUS.md },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

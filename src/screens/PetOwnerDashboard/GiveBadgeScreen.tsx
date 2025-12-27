@@ -14,13 +14,111 @@ import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
 const BADGES = [
-  { id: "senior", label: "Senior Pet Friendly", icon: "👵" },
-  { id: "routine", label: "Follows Routine Perfectly", icon: "🎯" },
-  { id: "walk", label: "Leash & Walk Pro", icon: "🐕‍🦺" },
-  { id: "feeding", label: "Clean Feeding Habits", icon: "🧺" },
-  { id: "stress", label: "Stress-Free Care", icon: "🐾" },
-  { id: "beyond", label: "Above & Beyond", icon: "💖" },
-  { id: "home", label: "Home-Aware Caretaker", icon: "🏠" },
+  {
+    id: "animal-lover",
+    name: "Animal Lover",
+    icon: "🐾",
+    color: "#FF6B9D",
+    description: "Shows exceptional love and care for animals",
+  },
+  {
+    id: "puppy-pro",
+    name: "Puppy Pro",
+    icon: "🐕",
+    color: "#FFB347",
+    description: "Expert at handling puppies and young dogs",
+  },
+  {
+    id: "cat-whisperer",
+    name: "Cat Whisperer",
+    icon: "🐱",
+    color: "#9B59B6",
+    description: "Has a special connection with cats",
+  },
+  {
+    id: "reliable-care",
+    name: "Reliable Care",
+    icon: "⭐",
+    color: "#F39C12",
+    description: "Consistently provides dependable care",
+  },
+  {
+    id: "great-communicator",
+    name: "Great Communicator",
+    icon: "💬",
+    color: "#3498DB",
+    description: "Excellent at keeping owners updated",
+  },
+  {
+    id: "calm-patient",
+    name: "Calm & Patient",
+    icon: "🧠",
+    color: "#82C4E5",
+    description: "Handles anxious or energetic pets gently",
+  },
+  {
+    id: "multi-pet-expert",
+    name: "Multi-Pet Expert",
+    icon: "🐾",
+    color: "#8E44AD",
+    description: "Successfully cared for more than one pet at a time",
+  },
+  {
+    id: "young-pet-specialist",
+    name: "Young Pet Specialist",
+    icon: "🍼",
+    color: "#F8B739",
+    description: "Great with puppies & kittens",
+  },
+  {
+    id: "senior-pet-friendly",
+    name: "Senior Pet Friendly",
+    icon: "🧓",
+    color: "#95A5A6",
+    description: "Extra care for older pets (mobility, meds, comfort)",
+  },
+  {
+    id: "follows-routine",
+    name: "Follows Routine Perfectly",
+    icon: "🎯",
+    color: "#E74C3C",
+    description: "Sticks closely to feeding, walking & sleep schedules",
+  },
+  {
+    id: "leash-walk-pro",
+    name: "Leash & Walk Pro",
+    icon: "🐕‍🦺",
+    color: "#27AE60",
+    description: "Excellent at safe and enjoyable walks",
+  },
+  {
+    id: "clean-feeding",
+    name: "Clean Feeding Habits",
+    icon: "🧺",
+    color: "#16A085",
+    description: "Maintains food/water areas hygienically",
+  },
+  {
+    id: "stress-free-care",
+    name: "Stress-Free Care",
+    icon: "🐾",
+    color: "#5DADE2",
+    description: "Keeps pets relaxed while owner is away",
+  },
+  {
+    id: "above-beyond",
+    name: "Above & Beyond",
+    icon: "💖",
+    color: "#EC407A",
+    description: "Did more than what was expected",
+  },
+  {
+    id: "home-aware",
+    name: "Home-Aware Caretaker",
+    icon: "🏡",
+    color: "#D35400",
+    description: "Takes care of pet while being mindful of owner's home",
+  },
 ];
 
 const GiveBadgeScreen = ({ navigation }: any) => {
@@ -54,7 +152,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
       if (requestId) {
         const requestRef = doc(db, "requests", requestId);
         await updateDoc(requestRef, {
-          status: "Completed",
+          // status: "Completed", // Removed as per user request
           awardedBadges: selectedBadges
         });
       }
@@ -107,7 +205,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
               >
                 <Text style={styles.icon}>{badge.icon}</Text>
                 <Text style={[styles.label, isSelected && styles.selectedLabel]}>
-                  {badge.label}
+                  {badge.name}
                 </Text>
               </TouchableOpacity>
             );

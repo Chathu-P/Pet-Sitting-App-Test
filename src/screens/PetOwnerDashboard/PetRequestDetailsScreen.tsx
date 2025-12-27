@@ -5,20 +5,23 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  TouchableOpacity,
   TextInput,
   Alert,
   Platform,
+  ImageBackground,
+  Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons } from "@expo/vector-icons";
+import LogoCircle from "../../components/LogoCircle";
 import DateTimePicker from '@react-native-community/datetimepicker'; 
 import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore"; 
 import { db, auth } from "../../services/firebase";
 
 // Components & Utils
 import Button from "../../components/Button";
-import RequestDetailsHeader from "../../components/RequestDetails/RequestDetailsHeader";
 import StepProgressBar from "../../components/RequestDetails/StepProgressBar";
 import StepProgressLabel from "../../components/RequestDetails/StepProgressLabel";
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
@@ -130,8 +133,50 @@ const PetRequestDetailsScreen = ({ navigation }: any) => {
     switch (currentStep) {
       case 1: return (
         <View>
+          {/* Pet Type Selector */}
+          <Text style={styles.label}>Pet Type</Text>
+          <View style={[styles.row, { marginBottom: 20 }]}>
+            {['dog', 'cat', 'other'].map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[
+                  styles.selectorBtn,
+                  petType === t && styles.selectorBtnActive
+                ]}
+                onPress={() => setPetType(t)}
+              >
+                <Text style={[styles.selectorBtnText, petType === t && { color: '#FFF' }]}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <Text style={styles.label}>Pet's Name</Text>
           <TextInput style={styles.input} value={petName} onChangeText={setPetName} placeholder="e.g. Max" placeholderTextColor="#888" />
+
+          <Text style={styles.label}>Breed</Text>
+          <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder="e.g. Golden Retriever" placeholderTextColor="#888" />
+
+          {/* Size Selector */}
+          <Text style={styles.label}>Size</Text>
+          <View style={[styles.row, { marginBottom: 20 }]}>
+            {['small', 'medium', 'large'].map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={[
+                  styles.selectorBtn,
+                  size === s && styles.selectorBtnActive
+                ]}
+                onPress={() => setSize(s)}
+              >
+                <Text style={[styles.selectorBtnText, size === s && { color: '#FFF' }]}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Age</Text>
@@ -140,7 +185,7 @@ const PetRequestDetailsScreen = ({ navigation }: any) => {
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Gender</Text>
               <TouchableOpacity style={styles.input} onPress={() => setGender(gender === 'male' ? 'female' : 'male')}>
-                <Text style={{ color: '#FFF' }}>{gender.toUpperCase()}</Text>
+                <Text style={{ color: '#FFF', textAlign: 'center' }}>{gender.toUpperCase()}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -238,43 +283,189 @@ const PetRequestDetailsScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <RequestDetailsHeader title={isEditing ? "Edit Request" : "New Request"} onBack={() => navigation.goBack()} />
-        <StepProgressLabel currentStep={currentStep} totalSteps={8} currentStepLabel={STEPS[currentStep-1].label} />
-        <StepProgressBar steps={STEPS} currentStep={currentStep} onStepPress={(id) => setCurrentStep(id)} />
-        <LinearGradient colors={["#1E120C", "#0F0804"]} style={styles.card}>
-          {renderStepContent()}
-          <View style={styles.footer}>
-            <TouchableOpacity onPress={() => setCurrentStep(Math.max(1, currentStep - 1))} disabled={currentStep === 1} style={[styles.backBtn, currentStep === 1 && { opacity: 0.3 }]}>
-              <Text style={{ color: '#FFF' }}>← Back</Text>
-            </TouchableOpacity>
-            <Button 
-              title={currentStep === 8 ? (isEditing ? "Submit Changes" : "Submit") : "Next"} 
-              onPress={() => currentStep === 8 ? submitRequest() : setCurrentStep(currentStep + 1)} 
-              variant="secondary"
-            />
+      <ImageBackground
+        source={require("../../../assets/petowner/Group 88.png")}
+        style={styles.backgroundImage}
+      >
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
+          <View
+            style={[
+              styles.header,
+              {
+                paddingHorizontal: wp(5),
+                paddingTop: hp(2),
+                paddingBottom: hp(2),
+              },
+            ]}
+          >
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={[styles.headerBackBtn, { width: 36, height: 36 }]}
+            >
+              <MaterialIcons name="arrow-back" color={COLORS.white} size={20} />
+            </Pressable>
+            <Text style={[styles.headerTitle, { fontSize: fonts.large }]}>
+              {isEditing ? "Edit Request" : "New Request"}
+            </Text>
+            <LogoCircle size={36} />
           </View>
-        </LinearGradient>
-      </ScrollView>
+          <StepProgressLabel currentStep={currentStep} totalSteps={8} currentStepLabel={STEPS[currentStep-1].label} />
+          <StepProgressBar steps={STEPS} currentStep={currentStep} onStepPress={(id) => setCurrentStep(id)} />
+          <LinearGradient colors={["#1E120C", "#0F0804"]} style={styles.card}>
+            {renderStepContent()}
+            <View style={styles.footer}>
+              <TouchableOpacity onPress={() => setCurrentStep(Math.max(1, currentStep - 1))} disabled={currentStep === 1} style={[styles.backBtn, currentStep === 1 && { opacity: 0.3 }]}>
+                <Text style={{ color: '#FFF' }}>← Back</Text>
+              </TouchableOpacity>
+              <Button 
+                title={currentStep === 8 ? (isEditing ? "Submit Changes" : "Submit") : "Next"} 
+                onPress={() => currentStep === 8 ? submitRequest() : setCurrentStep(currentStep + 1)} 
+                variant="secondary"
+              />
+            </View>
+          </LinearGradient>
+        </ScrollView>
+      </ImageBackground>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#000" },
-  card: { padding: 25, borderRadius: 20, marginTop: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  label: { color: "rgba(255,255,255,0.6)", marginBottom: 8, fontWeight: '600', fontSize: 14 },
-  input: { backgroundColor: "rgba(255,255,255,0.08)", padding: 18, borderRadius: 12, color: "#FFF", marginBottom: 15, fontSize: 16 },
-  row: { flexDirection: 'row', gap: 15 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, alignItems: 'center' },
-  backBtn: { padding: 15 },
-  dateDisplayBox: { backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 12, height: 60, justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', position: 'relative' },
-  dateInner: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18, alignItems: 'center' },
-  dateText: { color: '#FFF', fontSize: 16 },
-  calendarIcon: { fontSize: 18, opacity: 0.6 },
-  reviewText: { color: '#CCC', fontSize: 16, marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.05)', padding: 15, borderRadius: 10 },
-  webInput: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10 },
-  formTitle: { color: "#FFF", fontWeight: '700' }
+  backgroundImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  card: {
+    padding: 24,
+    borderRadius: 24,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  label: {
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 8,
+    fontWeight: "600",
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  input: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    padding: 18,
+    borderRadius: 16,
+    color: "#FFF",
+    marginBottom: 20,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  row: { flexDirection: "row", gap: 15 },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 35,
+    alignItems: "center",
+  },
+  backBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  dateDisplayBox: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 16,
+    height: 64,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    position: "relative",
+    marginBottom: 5,
+  },
+  dateInner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  dateText: { color: "#FFF", fontSize: 17, fontWeight: "500" },
+  calendarIcon: { fontSize: 20, opacity: 0.8 },
+  reviewText: {
+    color: "#E5E7EB",
+    fontSize: 16,
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    overflow: "hidden",
+  },
+  webInput: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+    width: "100%",
+    height: "100%",
+    cursor: "pointer",
+    zIndex: 10,
+  },
+  formTitle: {
+    color: "#FFF",
+    fontWeight: "800",
+    marginBottom: 10,
+    letterSpacing: -0.5,
+  },
+  header: {
+    backgroundColor: "#4A3C35",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    marginTop: 20,
+    marginHorizontal: -20, 
+  },
+  headerBackBtn: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 18,
+  },
+  headerTitle: {
+    color: "#FFF",
+    fontWeight: "700",
+  },
+  selectorBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+  },
+  selectorBtnActive: {
+    backgroundColor: COLORS.primary, // Using constant, or fallback to orange
+    borderColor: COLORS.primary,
+  },
+  selectorBtnText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });
 
 export default PetRequestDetailsScreen;

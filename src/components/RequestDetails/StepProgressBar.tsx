@@ -36,7 +36,7 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({
     <View
       style={[
         styles.container,
-        { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+        { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
       ]}
     >
       <ScrollView
@@ -48,7 +48,7 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({
           const isActive = currentStep === step.id;
           const isCompleted = currentStep > step.id;
           const textColor =
-            isActive || isCompleted ? COLORS.white : "rgba(255,255,255,0.65)";
+            isActive || isCompleted ? COLORS.white : "rgba(255, 0, 0, 0.65)";
 
           return (
             <View key={step.id} style={styles.itemWrap}>
@@ -62,7 +62,7 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({
                     backgroundColor: isActive
                       ? COLORS.primary
                       : isCompleted
-                      ? "rgba(255,255,255,0.15)"
+                      ? "rgba(234, 83, 7, 0.43)"
                       : "rgba(255,255,255,0.08)",
                     borderColor: isActive
                       ? COLORS.primary
@@ -84,7 +84,7 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({
                   style={[
                     styles.arrow,
                     {
-                      color: "rgba(255,255,255,0.6)",
+                      color: "rgba(151, 48, 11, 0.98)",
                       marginHorizontal: spacing.xs,
                     },
                   ]}
@@ -102,9 +102,9 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#2B1C14",
+    backgroundColor: "#ffffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
+    borderBottomColor: "rgba(255, 255, 255, 0.84)",
   },
   itemWrap: {
     flexDirection: "row",

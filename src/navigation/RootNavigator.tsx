@@ -17,6 +17,7 @@ import {
   PetSitterDashboardScreen,
   BrowseRequestsScreen,
   SitterProfileScreen,
+  RequestDetailsScreen,
 } from "../screens/PetSitterDashboard";
 import {
   AdminDashboardScreen,
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   PetSitterDashboardScreen: undefined;
   BrowseRequestsScreen: undefined;
   SitterProfileScreen: undefined;
+  RequestDetailsScreen: { requestId: string };
   AdminDashboardScreen: undefined;
   AdminUsersScreen: undefined;
   AdminRequestsScreen: undefined;
@@ -219,6 +221,10 @@ export default function RootNavigator() {
         <Stack.Screen
           name="SitterProfileScreen"
           component={SitterProfileScreen}
+        />
+        <Stack.Screen
+          name="RequestDetailsScreen"
+          component={RequestDetailsScreen}
         />
         <Stack.Screen
           name="PetRequestDetails"

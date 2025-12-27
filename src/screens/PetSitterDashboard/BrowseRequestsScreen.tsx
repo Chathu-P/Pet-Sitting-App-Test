@@ -7,7 +7,10 @@ import {
   ScrollView,
   Pressable,
   ImageBackground,
+  ActivityIndicator,
 } from "react-native";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc } from "firebase/firestore";
+import { db, auth } from "../../services/firebase";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
@@ -30,36 +33,6 @@ interface MatchRequest {
   reasons: string[];
 }
 
-const mockRequests: MatchRequest[] = [
-  {
-    id: "1",
-    petName: "Max",
-    breed: "Golden Retriever",
-    ageYears: 3,
-    matchPct: 70,
-    traits: ["Friendly", "Playful", "Energetic"],
-    startDate: "2025-12-20",
-    endDate: "2025-12-25",
-    location: "Downtown Area",
-    reasons: [
-      "You can handle energetic dogs",
-      "Location and availability match",
-    ],
-  },
-  {
-    id: "2",
-    petName: "Luna",
-    breed: "Persian Cat",
-    ageYears: 2,
-    matchPct: 80,
-    traits: ["Shy", "Calm", "Affectionate"],
-    startDate: "2025-12-18",
-    endDate: "2025-12-22",
-    location: "Westside",
-    reasons: ["You can handle medical care", "Location and availability match"],
-  },
-];
-
 const BrowseRequestsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { wp, hp } = useResponsive();
@@ -67,6 +40,170 @@ const BrowseRequestsScreen: React.FC = () => {
   const fonts = useResponsiveFonts();
 
   const [tab, setTab] = useState<"all" | "best">("all");
+  const [requests, setRequests] = useState<MatchRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sitterProfile, setSitterProfile] = useState<any>(null); // To store sitter's address, skills, etc.
+
+  // Fetch Sitter Profile for Matching
+  React.useEffect(() => {
+    const fetchSitterData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const profileDoc = await getDoc(doc(db, "sitterProfiles", user.uid));
+        
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const profileData = profileDoc.exists() ? profileDoc.data() : {};
+
+        setSitterProfile({
+           address: userData.address || "",
+           city: userData.address ? userData.address.split(',')[0].trim() : "", // Simple city extraction
+           skills: profileData.skills || {},
+           yearsOfExperience: profileData.experience?.yearsOfExperience || 0,
+           badges: profileData.badges || {}
+        });
+      } catch (e) {
+        console.error("Error fetching sitter for matching:", e);
+      }
+    };
+    fetchSitterData();
+  }, []);
+
+  // Calculate Best Match Score
+  const calculateMatchScore = (req: any, sitter: any) => {
+      if (!sitter) return { score: 70, reasons: [] }; // Default random baseline if no sitter data
+
+      let score = 0;
+      const reasons: string[] = [];
+
+      // 1. Location Match (40%)
+      const reqCity = (req.city || req.location || "").toLowerCase();
+      const sitterCity = (sitter.city || "").toLowerCase();
+      const sitterAddress = (sitter.address || "").toLowerCase();
+      
+      if (reqCity && (sitterCity.includes(reqCity) || sitterAddress.includes(reqCity))) {
+          score += 40;
+          reasons.push("Location is convenient for you");
+      }
+
+      // 2. Pet Type Match (30%)
+      const type = (req.petType || "").toLowerCase(); // dog, cat
+      const skills = sitter.skills || {};
+      
+      let hasPetSkill = false;
+      if (type === "dog" && (skills.bigDogs || skills.smallDogs || skills.puppies)) hasPetSkill = true;
+      else if (type === "cat" && (skills.cats || skills.kittens)) hasPetSkill = true;
+      // Default to true if unspecified or generic match needed
+      
+      if (hasPetSkill) {
+          score += 30;
+          reasons.push(`You have experience with ${type}s`);
+      }
+
+      // 3. Special Needs / Skills (20%)
+      const needs = (req.behaviorNotes || "").toLowerCase() + (req.messageToVolunteers || "").toLowerCase();
+      let specialSkillNeeded = false;
+      let hasSpecialSkill = false;
+
+      if (needs.includes("medical") || needs.includes("medication")) {
+          specialSkillNeeded = true;
+          if (skills.medicalCare) hasSpecialSkill = true;
+      }
+      
+      if (specialSkillNeeded) {
+         if (hasSpecialSkill) {
+             score += 20;
+             reasons.push("You have the required medical skills");
+         }
+      } else {
+         // Free points if no special needs
+         score += 20;
+      }
+
+      // 4. Experience & Badges (10%)
+      if (sitter.yearsOfExperience >= 2 || Object.keys(sitter.badges || {}).length > 0) {
+          score += 10;
+          reasons.push("Your experience matches");
+      }
+
+      return { score, reasons };
+  };
+
+  // Helper to safely format dates
+  const formatDate = (dateVal: any) => {
+    if (!dateVal) return "N/A";
+    try {
+      // Handle Firestore Timestamp if applicable
+      const date = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
+      if (isNaN(date.getTime())) return "N/A";
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      return "N/A";
+    }
+  };
+
+  // Fetch requests from Firestore
+  React.useEffect(() => {
+    const q = query(
+      collection(db, "requests"),
+      where("status", "in", ["Open", "Pending"])
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedRequests: MatchRequest[] = [];
+      
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        
+        // CHECK IF EXPIRED
+        if (data.endDate) {
+           const endDate = data.endDate.toDate ? data.endDate.toDate() : new Date(data.endDate);
+           
+           // Normalize comparison to prevent premature expiry of "today's" requests
+           const today = new Date();
+           today.setHours(0, 0, 0, 0); // Start of today
+
+           const checkDate = new Date(endDate);
+           checkDate.setHours(0, 0, 0, 0); // Start of end date
+
+           if (!isNaN(checkDate.getTime()) && checkDate < today) {
+               // Expired (End date is yesterday or earlier)
+               // We do this silently in background
+               updateDoc(doc(db, "requests", docSnap.id), {
+                   status: "Completed",
+                   completedAt: new Date()
+               }).catch(err => console.error("Error auto-completing request:", err));
+               return; // Don't add to list
+           }
+        }
+
+        const { score, reasons } = calculateMatchScore(data, sitterProfile);
+        
+        fetchedRequests.push({
+          id: docSnap.id,
+          petName: data.petName || "Unknown Pet",
+          breed: data.breed || data.petType || "Unknown Breed",
+          ageYears: parseInt(data.age) || 0,
+          matchPct: score > 0 ? score : 50, // Minimum 50 to look decent
+          traits: data.temperament ? [data.temperament] : ["Friendly"],
+          startDate: formatDate(data.startDate),
+          endDate: formatDate(data.endDate),
+          location: data.location || data.city || data.address || "Unknown Location",
+          reasons: reasons.length > 0 ? reasons : ["General profile match"]
+        });
+      });
+      
+      setRequests(fetchedRequests);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching requests:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [sitterProfile]); // Re-run when sitterProfile loads to update scores
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -106,7 +243,7 @@ const BrowseRequestsScreen: React.FC = () => {
           <View
             style={[
               styles.tabs,
-              { paddingHorizontal: wp(5), marginTop: hp(2), gap: spacing.md },
+              { paddingHorizontal: wp(5), marginTop: hp(2), gap: spacing.nmd },
             ]}
           >
             <Pressable
@@ -141,9 +278,22 @@ const BrowseRequestsScreen: React.FC = () => {
 
           {/* Cards */}
           <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
-            {mockRequests.map((r) => (
-              <View
+            {loading ? (
+              <ActivityIndicator size="large" color="#7C3AED" style={{ marginTop: 20 }} />
+            ) : requests.length === 0 ? (
+              <Text style={{ textAlign: "center", color: COLORS.secondary, marginTop: 20 }}>
+                No open requests found.
+              </Text>
+            ) : (
+              // Filter and Sort based on Tab
+              requests
+                // .filter(r => tab === "all" || r.matchPct >= 70) // Removed threshold as requested
+                .sort((a, b) => tab === "best" ? b.matchPct - a.matchPct : 0) // Sort by match for 'best'
+                .slice(0, tab === "best" ? 3 : undefined) // Top 3 for best match
+                .map((r) => (
+              <Pressable
                 key={r.id}
+                onPress={() => (navigation as any).navigate("RequestDetailsScreen", { requestId: r.id })}
                 style={[styles.card, { padding: wp(4), marginBottom: hp(2) }]}
               >
                 {/* Top row */}
@@ -177,7 +327,7 @@ const BrowseRequestsScreen: React.FC = () => {
                 </View>
 
                 {/* Traits */}
-                <View style={[styles.traitsRow, { marginTop: spacing.md }]}>
+                <View style={[styles.traitsRow, { marginTop: spacing.nmd }]}>
                   {r.traits.map((t, i) => (
                     <View
                       key={`${r.id}-t-${i}`}
@@ -196,7 +346,7 @@ const BrowseRequestsScreen: React.FC = () => {
                 </View>
 
                 {/* Dates */}
-                <View style={[styles.row, { marginTop: spacing.md }]}>
+                <View style={[styles.row, { marginTop: spacing.nmd }]}>
                   <MaterialIcons name="date-range" size={18} color="#7C3AED" />
                   <Text
                     style={[
@@ -247,8 +397,9 @@ const BrowseRequestsScreen: React.FC = () => {
                     </View>
                   ))}
                 </View>
-              </View>
-            ))}
+              </Pressable>
+              ))
+            )}
           </View>
         </ScrollView>
       </ImageBackground>

@@ -199,7 +199,7 @@ const LoginScreen: React.FC = () => {
                 marginTop: hp(8),
                 marginBottom: hp(4),
                 paddingHorizontal: wp(5),
-                paddingVertical: spacing.md,
+                paddingVertical: spacing.lg,
                 backgroundColor: "rgba(255, 255, 255, 0.85)",
                 borderRadius: wp(6),
                 marginHorizontal: wp(4),

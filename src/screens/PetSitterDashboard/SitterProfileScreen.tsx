@@ -31,6 +31,8 @@ const SitterProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sitterName, setSitterName] = useState("Sitter");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [rating, setRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
   const [yearsOfExperience, setYearsOfExperience] = useState(0);
@@ -68,6 +70,8 @@ const SitterProfileScreen: React.FC = () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setSitterName(userData?.fullName || "Sitter");
+          setAddress(userData?.address || "");
+          setPhone(userData?.phone || "");
         }
 
         // Fetch sitter profile from separate collection
@@ -147,7 +151,19 @@ const SitterProfileScreen: React.FC = () => {
         seniorPets: selectedSkills.includes("Senior Pets"),
       };
 
-      // Save to sitterProfiles collection
+      // Save basic info to users collection
+      await setDoc(
+        doc(db, "users", userId),
+        {
+          fullName: sitterName,
+          address: address,
+          phone: phone,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      // Save specific profile info to sitterProfiles collection
       await setDoc(
         doc(db, "sitterProfiles", userId),
         {
@@ -243,13 +259,63 @@ const SitterProfileScreen: React.FC = () => {
                   alignItems: "center",
                 }}
               >
-                <View>
-                  <Text style={[styles.name, { fontSize: fonts.medium }]}>
-                    {sitterName}
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+                    Full Name
                   </Text>
-                  <Text style={[styles.subtitle, { fontSize: fonts.small }]}>
-                    Pet Sitter
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: fonts.medium, 
+                        fontWeight: "700", 
+                        paddingVertical: 8, 
+                        minHeight: 40,
+                        backgroundColor: "#fff",
+                        borderWidth: 1,
+                        marginBottom: 8
+                      },
+                    ]}
+                    value={sitterName}
+                    onChangeText={setSitterName}
+                    placeholder="Sitter Name"
+                  />
+                  
+                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+                    Phone
                   </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: fonts.small, 
+                        paddingVertical: 8, 
+                        minHeight: 40,
+                        marginBottom: 8
+                      },
+                    ]}
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="Phone Number"
+                    keyboardType="phone-pad"
+                  />
+
+                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+                    Address
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: fonts.small, 
+                        paddingVertical: 8, 
+                        minHeight: 40,
+                      },
+                    ]}
+                    value={address}
+                    onChangeText={setAddress}
+                    placeholder="Address, Country"
+                  />
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <FontAwesome name="star" size={18} color="#FFD700" />
