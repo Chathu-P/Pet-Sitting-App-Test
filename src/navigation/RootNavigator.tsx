@@ -115,26 +115,18 @@ export default function RootNavigator() {
       }
       setCurrentUser(u);
       try {
-        // Check custom claims for admin flag
-        const tokenResult = await getIdTokenResult(u, true);
-        const isAdmin = !!tokenResult.claims?.admin;
+        // Fetch Firestore role for all users
+        const snap = await getDoc(doc(db, "users", u.uid));
+        const data = snap.exists() ? (snap.data() as any) : null;
+        const userRole = (data?.role as "owner" | "sitter" | "admin" | undefined) ?? null;
+        setRole(userRole);
 
-        if (isAdmin) {
-          setRole("admin");
+        if (userRole === "admin") {
           navigationRef.current?.reset({
             index: 0,
             routes: [{ name: "AdminDashboardScreen" }],
           });
-          return;
-        }
-
-        // Non-admin: fetch Firestore role
-        const snap = await getDoc(doc(db, "users", u.uid));
-        const data = snap.exists() ? (snap.data() as any) : null;
-        const userRole = (data?.role as "owner" | "sitter" | undefined) ?? null;
-        setRole(userRole);
-
-        if (userRole === "owner") {
+        } else if (userRole === "owner") {
           navigationRef.current?.reset({
             index: 0,
             routes: [{ name: "PetOwnerDashboardScreen" }],

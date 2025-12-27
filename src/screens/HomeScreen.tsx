@@ -112,7 +112,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGetStarted }) => {
                 styles.welcomeBackdrop,
                 {
                   opacity: titleOpacity,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.lg,
                   paddingHorizontal: spacing.lg,
                 },
               ]}
@@ -182,7 +182,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGetStarted }) => {
                 style={{
                   width: wp(80),
                   maxWidth: 360,
-                  paddingVertical: isSmallDevice ? spacing.md : spacing.lg,
+                  paddingVertical: isSmallDevice ? spacing.lg : spacing.lg,
                 }}
               />
             </Animated.View>

@@ -92,7 +92,7 @@ const AdminUsersScreen: React.FC = () => {
                 Manage Users
               </Text>
 
-              <View style={{ marginTop: spacing.md }}>
+              <View style={{ marginTop: spacing.lg }}>
                 {mockUsers.map((u) => (
                   <View key={u.id} style={[styles.userRow, { padding: wp(3) }]}>
                     <View style={{ flex: 1 }}>

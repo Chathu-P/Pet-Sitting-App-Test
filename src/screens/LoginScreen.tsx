@@ -77,29 +77,7 @@ const LoginScreen: React.FC = () => {
       );
       const uid = userCred.user.uid;
 
-      // Check admin claim first
-      const tokenResult = await getIdTokenResult(userCred.user, true);
-      const isAdmin = !!tokenResult.claims?.admin;
-
-      // Save email if remember me is checked
-      if (remember) {
-        await AsyncStorage.setItem("rememberMeEmail", email.trim());
-        await AsyncStorage.setItem("rememberMeChecked", "true");
-      } else {
-        // Clear saved email if remember me is unchecked
-        await AsyncStorage.removeItem("rememberMeEmail");
-        await AsyncStorage.removeItem("rememberMeChecked");
-      }
-
-      if (isAdmin) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "AdminDashboardScreen" as never }],
-        });
-        return;
-      }
-
-      // Fetch user role from Firestore for non-admins
+      // Fetch user role from Firestore
       const userDocRef = doc(db, "users", uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -107,7 +85,12 @@ const LoginScreen: React.FC = () => {
         const role = userDocSnap.data()?.role;
         console.log("User role:", role);
 
-        if (role === "owner") {
+        if (role === "admin") {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AdminDashboardScreen" as never }],
+          });
+        } else if (role === "owner") {
           navigation.reset({
             index: 0,
             routes: [{ name: "PetOwnerDashboardScreen" as never }],
@@ -118,10 +101,12 @@ const LoginScreen: React.FC = () => {
             routes: [{ name: "PetSitterDashboardScreen" as never }],
           });
         } else {
+          // Default fallback
           navigation.reset({
             index: 0,
             routes: [{ name: "PetSitterDashboardScreen" as never }],
           });
+
         }
       } else {
         console.warn("User document not found in Firestore");

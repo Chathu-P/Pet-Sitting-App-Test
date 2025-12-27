@@ -15,6 +15,8 @@ import {
   useResponsiveSpacing,
   useResponsiveFonts,
 } from "../../utils/responsive";
+import { db } from "../../services/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useAdminGuard } from "./useAdminGuard";
 import AdminTabs from "./AdminTabs";
 import AdminHeader from "./AdminHeader";
@@ -31,19 +33,69 @@ const AdminDashboardScreen: React.FC = () => {
 
   const { checking } = useAdminGuard(navigateHome);
 
-  const stats = {
-    totalUsers: 2,
-    totalRequests: 2,
-    active: 2,
+  const [stats, setStats] = React.useState({
+    totalUsers: 0,
+    totalRequests: 0,
+    active: 0,
     completed: 0,
-  };
+    petOwners: 0,
+    petSitters: 0,
+    openRequests: 0,
+  });
+
+  // Fetch Stats Real-time
+  React.useEffect(() => {
+    // 1. Users
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      let owners = 0;
+      let sitters = 0;
+      snap.forEach((doc) => {
+          const r = doc.data().role;
+          if (r === "owner") owners++;
+          if (r === "sitter") sitters++;
+      });
+      setStats((prev) => ({ 
+          ...prev, 
+          totalUsers: owners + sitters, // Exclude admin
+          petOwners: owners,
+          petSitters: sitters
+      }));
+    });
+
+    // 2. Requests
+    const unsubRequests = onSnapshot(collection(db, "requests"), (snap) => {
+      let activeCount = 0;
+      let completedCount = 0;
+      let openCount = 0;
+      
+      snap.forEach((doc) => {
+        const data = doc.data();
+        if (data.status === "Accepted") activeCount++;
+        if (data.status === "Completed") completedCount++;
+        if (data.status === "Open" || data.status === "Pending") openCount++;
+      });
+      
+      setStats((prev) => ({
+        ...prev,
+        totalRequests: snap.size,
+        active: activeCount,
+        completed: completedCount,
+        openRequests: openCount
+      }));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubRequests();
+    };
+  }, []);
 
   const analytics = [
-    { label: "Pet Owners", value: 1, max: 2, color: "#a855f7" },
-    { label: "Pet Sitters", value: 1, max: 2, color: "#ec4899" },
-    { label: "Open Requests", value: 2, max: 4, color: "#22c5b8" },
-    { label: "Assigned Requests", value: 0, max: 4, color: "#9ca3af" },
-    { label: "Completed", value: 0, max: 4, color: "#9ca3af" },
+    { label: "Pet Owners", value: stats.petOwners, max: stats.totalUsers, color: "#a855f7" },
+    { label: "Pet Sitters", value: stats.petSitters, max: stats.totalUsers, color: "#ec4899" },
+    { label: "Open Requests", value: stats.openRequests, max: stats.totalRequests, color: "#22c5b8" },
+    { label: "Assigned Requests", value: stats.active, max: stats.totalRequests, color: "#eab308" }, // "Assigned" = Accepted
+    { label: "Completed", value: stats.completed, max: stats.totalRequests, color: "#9ca3af" },
   ];
 
   const ProgressRow = ({
@@ -59,7 +111,7 @@ const AdminDashboardScreen: React.FC = () => {
   }) => {
     const pct = Math.min(100, Math.round((value / Math.max(1, max)) * 100));
     return (
-      <View style={{ marginTop: spacing.md }}>
+      <View style={{ marginTop: spacing.lg }}>
         <View
           style={{
             flexDirection: "row",

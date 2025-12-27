@@ -95,7 +95,7 @@ const HomeScreen2: React.FC = () => {
                   {
                     fontSize: fonts.medium,
                     lineHeight: fonts.medium * 1.5,
-                    marginTop: spacing.md,
+                    marginTop: spacing.lg,
                     marginBottom: spacing.lg,
                   },
                 ]}
@@ -106,7 +106,7 @@ const HomeScreen2: React.FC = () => {
               </Text>
 
               {/* Buttons */}
-              <View style={[styles.ctaColumn, { gap: spacing.md }]}>
+              <View style={[styles.ctaColumn, { gap: spacing.lg }]}>
                 <Button
                   title="Login"
                   onPress={() => navigation.navigate("LoginScreen" as never)}

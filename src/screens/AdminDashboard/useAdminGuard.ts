@@ -3,8 +3,8 @@
  * If missing, it triggers the provided navigateHome callback.
  */
 import { useEffect, useState } from "react";
-import { getIdTokenResult } from "firebase/auth";
-import { auth } from "../../services/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../services/firebase";
 
 export function useAdminGuard(navigateHome: () => void) {
   const [checking, setChecking] = useState(true);
@@ -20,11 +20,25 @@ export function useAdminGuard(navigateHome: () => void) {
           if (active) navigateHome();
           return;
         }
-        const token = await getIdTokenResult(user, true);
-        const admin = !!token.claims?.admin;
-        if (!admin && active) navigateHome();
-        if (active) setIsAdmin(admin);
+
+        // Updated guard: Check Firestore Role instead of Custom Claims
+        const docRef = doc(db, "users", user.uid);
+        const snapshot = await getDoc(docRef);
+
+        let validAdmin = false;
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data?.role === "admin") {
+            validAdmin = true;
+          }
+        }
+
+        if (!validAdmin && active) {
+          navigateHome();
+        }
+        if (active) setIsAdmin(validAdmin);
       } catch (err) {
+        console.error("Admin guard check failed", err);
         if (active) navigateHome();
       } finally {
         if (active) setChecking(false);
