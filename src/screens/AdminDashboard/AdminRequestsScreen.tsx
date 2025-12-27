@@ -93,6 +93,8 @@ const AdminRequestsScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    if (checking) return;
+
     const q = query(collection(db, "requests"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched: SittingRequest[] = [];
@@ -125,7 +127,7 @@ const AdminRequestsScreen: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [checking]);
 
   const fetchUserDetails = async (userId: string) => {
     try {

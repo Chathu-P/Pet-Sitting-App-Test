@@ -86,13 +86,24 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
       where("ownerId", "==", currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRequests = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setRequests(fetchedRequests);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedRequests = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRequests(fetchedRequests);
+      },
+      (error) => {
+        // Ignore permission errors that happen during signout
+        if (error.code === "permission-denied") {
+          console.log("Permission denied (likely due to sign out).");
+          return;
+        }
+        console.error("Snapshot error:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -177,6 +188,35 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
     }
   };
 
+  const renderSkills = (skills: any) => {
+    if (!skills) return null;
+    const activeSkills = Object.keys(skills).filter((key) => skills[key]);
+    if (activeSkills.length === 0) return <Text style={styles.detailText}>No skills listed.</Text>;
+    
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {activeSkills.map((skill) => (
+          <View key={skill} style={styles.skillBadge}>
+             <Text style={styles.skillText}>
+               {skill.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+             </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const handleSignOut = () => {
+    signOut(auth)
+      .then(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "HomeScreen" }],
+        });
+      })
+      .catch((error) => console.error("Sign out error:", error));
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -200,9 +240,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           <View style={styles.headerRow}>
             <LogoCircle size={50} />
             <TouchableOpacity
-              onPress={() =>
-                signOut(auth).then(() => navigation.navigate("HomeScreen"))
-              }
+              onPress={handleSignOut}
               style={styles.signOutBtn}
             >
               <Text style={{ color: COLORS.white }}>Sign Out</Text>
@@ -353,31 +391,77 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                   <Text style={styles.sectionHeader}>Pet Information</Text>
                   <View style={styles.infoBox}>
                     <Text style={styles.detailText}>
-                      Name: {selectedRequest.petName}
+                      <Text style={{ fontWeight: '700' }}>Name:</Text> {selectedRequest.petName}
                     </Text>
                     <Text style={styles.detailText}>
-                      Breed: {selectedRequest.breed}
+                      <Text style={{ fontWeight: '700' }}>Type:</Text> {selectedRequest.petType}
                     </Text>
                     <Text style={styles.detailText}>
-                      Age: {selectedRequest.age}
+                      <Text style={{ fontWeight: '700' }}>Breed:</Text> {selectedRequest.breed}
                     </Text>
                     <Text style={styles.detailText}>
-                      Gender: {selectedRequest.gender}
+                      <Text style={{ fontWeight: '700' }}>Age:</Text> {selectedRequest.age}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Gender:</Text> {selectedRequest.gender}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Size:</Text> {selectedRequest.size}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Temperament:</Text> {selectedRequest.temperament}
                     </Text>
                   </View>
 
-                  <Text style={styles.sectionHeader}>Schedule & Location</Text>
+                  <Text style={styles.sectionHeader}>Care Instructions</Text>
                   <View style={styles.infoBox}>
                     <Text style={styles.detailText}>
-                      Start:{" "}
-                      {new Date(selectedRequest.startDate).toLocaleDateString()}
+                      <Text style={{ fontWeight: '700' }}>Feeding:</Text> {selectedRequest.feedingSchedule}
                     </Text>
                     <Text style={styles.detailText}>
-                      End:{" "}
-                      {new Date(selectedRequest.endDate).toLocaleDateString()}
+                      <Text style={{ fontWeight: '700' }}>Walks Required:</Text> {selectedRequest.walkRequirement ? 'Yes' : 'No'}
+                    </Text>
+                    {selectedRequest.behaviorNotes ? (
+                        <Text style={[styles.detailText, { marginTop: 4 }]}>
+                          <Text style={{ fontWeight: '700' }}>Behavior Notes:</Text> {selectedRequest.behaviorNotes}
+                        </Text>
+                    ) : null}
+                    {selectedRequest.messageToVolunteers ? (
+                        <Text style={[styles.detailText, { marginTop: 4 }]}>
+                          <Text style={{ fontWeight: '700' }}>Message:</Text> {selectedRequest.messageToVolunteers}
+                        </Text>
+                    ) : null}
+                  </View>
+
+                  <Text style={styles.sectionHeader}>Location & Emergency</Text>
+                  <View style={styles.infoBox}>
+                     <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Address:</Text> {selectedRequest.address}
                     </Text>
                     <Text style={styles.detailText}>
-                      Location: {selectedRequest.location}
+                      <Text style={{ fontWeight: '700' }}>City:</Text> {selectedRequest.city}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Neighborhood:</Text> {selectedRequest.neighborhood}
+                    </Text>
+                    <View style={styles.divider} />
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Emergency Contact:</Text> {selectedRequest.emergencyContactName}
+                    </Text>
+                     <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Emergency Phone:</Text> {selectedRequest.emergencyPhone}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.sectionHeader}>Schedule</Text>
+                  <View style={styles.infoBox}>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>Start:</Text>{" "}
+                      {new Date(selectedRequest.startDate).toLocaleDateString()} {new Date(selectedRequest.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: '700' }}>End:</Text>{" "}
+                      {new Date(selectedRequest.endDate).toLocaleDateString()} {new Date(selectedRequest.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   </View>
 
@@ -388,36 +472,107 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                       </View>
                   </View>
 
+                  {/* SHOW BADGES AWARDED FOR THIS REQUEST IF ANY */}
+                   {selectedRequest.awardedBadges && selectedRequest.awardedBadges.length > 0 && (
+                      <>
+                        <Text style={styles.sectionHeader}>Badges Awarded</Text>
+                        <View style={styles.infoBox}>
+                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                             {selectedRequest.awardedBadges.map((badge: string) => (
+                               <View key={badge} style={[styles.skillBadge, {backgroundColor: '#FEF3C7'}]}>
+                                 <Text style={[styles.skillText, {color:'#D97706'}]}>
+                                   {badge.replace(/-/g, ' ').replace(/^./, str => str.toUpperCase())}
+                                 </Text>
+                               </View>
+                             ))}
+                          </View>
+                        </View>
+                      </>
+                   )}
+
+
                   {sitterDetails && (
                     <>
-                      <Text style={styles.sectionHeader}>Sitter Details</Text>
+                      <Text style={styles.sectionHeader}>Sitter Profile</Text>
                       <View
                         style={[
                           styles.infoBox,
                           { backgroundColor: "#F0F9FF", borderColor: "#BAE6FD" },
                         ]}
                       >
-                        <Text style={styles.detailText}>
-                          Name: {sitterDetails.fullName || sitterDetails.name}
-                        </Text>
-                        <Text style={styles.detailText}>
-                          Email: {sitterDetails.email}
-                        </Text>
-                        <Text style={styles.detailText}>
-                          Phone: {sitterDetails.phone}
-                        </Text>
+                         <View style={{borderBottomWidth:1, borderBottomColor: '#E0F2FE', paddingBottom: 8, marginBottom: 8}}>
+                             <Text style={[styles.detailText, {fontWeight: '700', color: COLORS.secondary}]}>
+                               {sitterDetails.fullName || sitterDetails.name}
+                             </Text>
+                             <Text style={styles.detailText}>
+                               📧 {sitterDetails.email}
+                             </Text>
+                             <Text style={styles.detailText}>
+                               📞 {sitterDetails.phone || "No phone"}
+                             </Text>
+                         </View>
+
+                         {/* Availability */}
+                         {sitterDetails.availability && sitterDetails.availability.schedule ? (
+                             <View style={{marginBottom: 8}}>
+                                <Text style={[styles.detailText, {fontWeight:'600'}]}>Availability:</Text>
+                                <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>{sitterDetails.availability.schedule}</Text>
+                             </View>
+                         ) : null}
+
+                         {/* About Me */}
+                         {sitterDetails.aboutMe ? (
+                             <View style={{marginBottom: 8}}>
+                                <Text style={[styles.detailText, {fontWeight:'600'}]}>About:</Text>
+                                <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>{sitterDetails.aboutMe}</Text>
+                             </View>
+                         ) : null}
+
+                         {/* Experience */}
+                         {sitterDetails.experience && (
+                            <View style={{marginBottom: 8}}>
+                               {sitterDetails.experience.yearsOfExperience !== undefined && (
+                                   <Text style={[styles.detailText, {fontWeight:'600'}]}>
+                                     Exp: {sitterDetails.experience.yearsOfExperience} Year(s)
+                                   </Text>
+                               )}
+                               {sitterDetails.experience.description ? (
+                                   <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>
+                                       {sitterDetails.experience.description}
+                                   </Text>
+                               ) : null}
+                            </View>
+                         )}
+
+                         {/* Skills */}
+                         {sitterDetails.skills && (
+                            <View>
+                               <Text style={[styles.detailText, {fontWeight:'600', marginBottom: 4}]}>Skills:</Text>
+                               {renderSkills(sitterDetails.skills)}
+                            </View>
+                         )}
                       </View>
                     </>
                   )}
 
                   <TouchableOpacity
-                    style={[styles.editBtn, { marginTop: 20 }]}
+                    style={[
+                        styles.editBtn, 
+                        { 
+                            marginTop: 20, 
+                            backgroundColor: selectedRequest.status === 'Completed' ? '#9CA3AF' : COLORS.primary,
+                            opacity: selectedRequest.status === 'Completed' ? 0.7 : 1
+                        }
+                    ]}
+                    disabled={selectedRequest.status === 'Completed'}
                     onPress={() => {
                         closeModal();
                         navigation.navigate("PetRequestDetails", { requestId: selectedRequest.id, isEditing: true });
                     }}
                   >
-                    <Text style={styles.editBtnText}>Edit Request</Text>
+                    <Text style={styles.editBtnText}>
+                        {selectedRequest.status === 'Completed' ? 'Request Completed' : 'Edit Request'}
+                    </Text>
                   </TouchableOpacity>
                 </ScrollView>
               )
@@ -576,6 +731,17 @@ const styles = StyleSheet.create({
       color: COLORS.white,
       fontWeight: '700',
       fontSize: 16
+  },
+  skillBadge: {
+    backgroundColor: '#E0E7FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  skillText: {
+    color: '#3730A3',
+    fontSize: 12,
+    fontWeight: '600'
   }
 });
 
