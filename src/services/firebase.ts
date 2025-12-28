@@ -16,8 +16,8 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-// React Native + Expo: force long polling for Firestore reliability
+// React Native + Expo: Try without long polling if getting IOException
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
+  experimentalForceLongPolling: false,
 });
 export default app;

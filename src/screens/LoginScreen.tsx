@@ -82,8 +82,26 @@ const LoginScreen: React.FC = () => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
-        const role = userDocSnap.data()?.role;
+        const userData = userDocSnap.data();
+        const role = userData?.role;
+        const isActive = userData?.isActive !== false; // Default to true if not set
+        
         console.log("User role:", role);
+        console.log("User active status:", isActive);
+
+        // Check if user is blocked
+        if (!isActive) {
+          console.log("LoginScreen: User is BLOCKED - showing error and signing out");
+          setLoading(false);
+          setError("Your account has been blocked by the administrator. Please contact support.");
+          // Sign out WITHOUT awaiting - this allows error to show first
+          setTimeout(() => {
+            auth.signOut();
+          }, 100);
+          return;
+        }
+
+        console.log("LoginScreen: User is active, proceeding with navigation");
 
         if (role === "admin") {
           navigation.reset({
