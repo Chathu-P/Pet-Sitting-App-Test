@@ -106,11 +106,10 @@ export default function RootNavigator() {
         setCurrentUser(null);
         setRole(null);
         setInitializing(false);
-        // Navigate to HomeScreen if not authenticated
-        navigationRef.current?.reset({
-          index: 0,
-          routes: [{ name: "HomeScreen" }],
-        });
+        
+        // Don't auto-navigate to HomeScreen on logout
+        // This allows LoginScreen to show error messages
+        console.log("RootNavigator: User signed out, not auto-navigating");
         return;
       }
       setCurrentUser(u);
@@ -119,6 +118,18 @@ export default function RootNavigator() {
         const snap = await getDoc(doc(db, "users", u.uid));
         const data = snap.exists() ? (snap.data() as any) : null;
         const userRole = (data?.role as "owner" | "sitter" | "admin" | undefined) ?? null;
+        const isActive = data?.isActive !== false; // Default to true if not set
+        
+        console.log("RootNavigator - User role:", userRole);
+        console.log("RootNavigator - User active status:", isActive);
+        
+        // Check if user is blocked
+        if (!isActive) {
+          console.log("RootNavigator - User is blocked, signing out");
+          await auth.signOut(); // This will trigger the auth state change again
+          return; // Don't navigate, let the signOut trigger handle navigation to HomeScreen
+        }
+        
         setRole(userRole);
 
         if (userRole === "admin") {

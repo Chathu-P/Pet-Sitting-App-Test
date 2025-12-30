@@ -20,7 +20,7 @@ import {
   useResponsiveFonts,
 } from "../../utils/responsive";
 import { db } from "../../services/firebase";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc } from "firebase/firestore";
 import { useAdminGuard } from "./useAdminGuard";
 import AdminTabs from "./AdminTabs";
 import AdminHeader from "./AdminHeader";
@@ -91,6 +91,22 @@ const AdminUsersScreen: React.FC = () => {
   const closeModal = () => {
     setModalVisible(false);
     setSelectedUser(null);
+  };
+
+  const handleToggleBlockUser = async (user: AdminUser) => {
+    try {
+      const userRef = doc(db, "users", user.id);
+      const newStatus = !user.active;
+      
+      await updateDoc(userRef, {
+        isActive: newStatus
+      });
+
+      console.log(`User ${user.name} ${newStatus ? 'unblocked' : 'blocked'} successfully`);
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      alert("Failed to update user status. Please try again.");
+    }
   };
 
   const formatDate = (timestamp: any) => {
@@ -244,15 +260,16 @@ const AdminUsersScreen: React.FC = () => {
                           </Text>
                         </Pressable>
                         
-                        {/* Block Button */}
+                        {/* Block/Unblock Button */}
                         <Pressable
+                          onPress={() => handleToggleBlockUser(u)}
                           style={[
-                            styles.blockBtn,
+                            u.active ? styles.blockBtn : styles.unblockBtn,
                             { paddingHorizontal: 14, paddingVertical: 8 },
                           ]}
                         >
                           <MaterialIcons
-                            name="block"
+                            name={u.active ? "block" : "check-circle"}
                             size={18}
                             color={COLORS.white}
                           />
@@ -262,7 +279,7 @@ const AdminUsersScreen: React.FC = () => {
                               { fontSize: fonts.small, marginLeft: 6 },
                             ]}
                           >
-                            Block
+                            {u.active ? "Block" : "Unblock"}
                           </Text>
                         </Pressable>
                     
@@ -470,6 +487,12 @@ const styles = StyleSheet.create({
 
   blockBtn: {
     backgroundColor: "#DC2626",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  unblockBtn: {
+    backgroundColor: "#059669",
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
