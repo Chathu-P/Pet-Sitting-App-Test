@@ -27,6 +27,7 @@ import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
 import { auth, db } from "../../services/firebase";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
+import NotificationsView from "../../components/Chat-Diary-Notification/NotificationsView";
 
 interface RequestCard {
   id: string;
@@ -116,106 +117,95 @@ const PetSitterDashboardScreen: React.FC = () => {
 
   // Fetch badges from COMPLETED requests
   useEffect(() => {
-    const fetchBadges = async () => {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-      // Query ALL completed requests for this sitter
-      const q = query(
-        collection(db, "requests"),
-        where("sitterId", "==", currentUser.uid),
-        where("status", "==", "Completed")
-      );
+    // Query ALL completed requests for this sitter
+    const q = query(
+      collection(db, "requests"),
+      where("sitterId", "==", currentUser.uid),
+      where("status", "==", "Completed")
+    );
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const badgeCounts: { [key: string]: number } = {};
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const badgeCounts: { [key: string]: number } = {};
 
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.awardedBadges && Array.isArray(data.awardedBadges)) {
-             data.awardedBadges.forEach((badgeId: string) => {
-               badgeCounts[badgeId] = (badgeCounts[badgeId] || 0) + 1;
-             });
-          }
-        });
-
-        const badgeMap = BADGES_DATA;
-        const formattedBadges = Object.entries(badgeCounts)
-          .map(([key, count]) => ({
-            name: badgeMap[key]?.name || key,
-            count: count,
-            icon: badgeMap[key]?.icon || "🏆",
-          }))
-          // Sort or filter if needed? User said "without duplicates", this map has unique keys
-          .sort((a, b) => b.count - a.count); // Optional: sort by most frequent
-
-        setBadges(formattedBadges);
-      }, (error) => {
-        console.error("Error fetching badges:", error);
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.awardedBadges && Array.isArray(data.awardedBadges)) {
+            data.awardedBadges.forEach((badgeId: string) => {
+              badgeCounts[badgeId] = (badgeCounts[badgeId] || 0) + 1;
+            });
+        }
       });
 
-      return () => unsubscribe();
-    };
-    fetchBadges();
+      const badgeMap = BADGES_DATA;
+      const formattedBadges = Object.entries(badgeCounts)
+        .map(([key, count]) => ({
+          name: badgeMap[key]?.name || key,
+          count: count,
+          icon: badgeMap[key]?.icon || "🏆",
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      setBadges(formattedBadges);
+    }, (error) => {
+      // Ignore permission errors on sign out
+      if (error.code !== "permission-denied") {
+          console.error("Error fetching badges:", error);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Fetch accepted pet sitting requests (Active Jobs)
   useEffect(() => {
-    const fetchAcceptedRequests = async () => {
-         const currentUser = auth.currentUser;
-         if (!currentUser) return;
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-         const q = query(
-           collection(db, "requests"),
-           where("status", "==", requestType),
-           where("sitterId", "==", currentUser.uid)
-         );
-     
-         const unsubscribe = onSnapshot(q, (snapshot) => {
-           const fetchedRequests = snapshot.docs.map(docSnap => {
-             const data = docSnap.data();
+      const q = query(
+        collection(db, "requests"),
+        where("status", "==", requestType),
+        where("sitterId", "==", currentUser.uid)
+      );
+  
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedRequests = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
 
-             // Check for auto-completion (expired accepted requests)
-             if (data.status === "Accepted" && data.endDate) {
-                 const endDate = new Date(data.endDate); // Assuming string YYYY-MM-DD or comparable
-                 const yesterday = new Date();
-                 yesterday.setDate(yesterday.getDate() - 1); // Buffer or strict? Let's use strict today comparison or end of day logic. 
-                 // Simple string compare is risky if formats vary, but if standard ISO YYYY-MM-DD:
-                 // Better to compare timestamps. 
-                 // If endDate is just a date string "2023-12-25", new Date("2023-12-25") is UTC 00:00.
-                 // We want to complete it if TODAY is AFTER that date.
-                 
-                 const today = new Date();
-                 today.setHours(0,0,0,0);
-                 
-                 // If endDate is in the past
-                 if (endDate < today) {
-                    // Update to Completed
-                     updateDoc(doc(db, "requests", docSnap.id), {
-                         status: "Completed"
-                     }).catch(err => console.error("Auto-complete error", err));
-                 }
-             }
+          // Check for auto-completion (expired accepted requests)
+          if (data.status === "Accepted" && data.endDate) {
+              const endDate = new Date(data.endDate); 
+              const today = new Date();
+              today.setHours(0,0,0,0);
+              
+              if (endDate < today) {
+                  updateDoc(doc(db, "requests", docSnap.id), {
+                      status: "Completed"
+                  }).catch(err => console.error("Auto-complete error", err));
+              }
+          }
 
-             return {
-               id: docSnap.id,
-               petName: data.petName || "Unknown Pet",
-               breed: data.breed || data.petType || "Pet",
-               startDate: data.startDate || "",
-               endDate: data.endDate || "",
-               location: data.location || data.city || "No location",
-               status: data.status,
-               awardedBadges: data.awardedBadges || []
-             };
-           });
-           setAvailableRequests(fetchedRequests); 
-         }, (error) => {
-           console.error("Error fetching requests:", error);
-         });
-     
-         return () => unsubscribe();
-    }
-    fetchAcceptedRequests();
+          return {
+            id: docSnap.id,
+            petName: data.petName || "Unknown Pet",
+            breed: data.breed || data.petType || "Pet",
+            startDate: data.startDate || "",
+            endDate: data.endDate || "",
+            location: data.location || data.city || "No location",
+            status: data.status,
+            awardedBadges: data.awardedBadges || []
+          };
+        });
+        setAvailableRequests(fetchedRequests); 
+      }, (error) => {
+        if (error.code !== "permission-denied") {
+            console.error("Error fetching requests:", error);
+        }
+      });
+  
+      return () => unsubscribe();
   }, [requestType]);
 
   // Removed separate fetchActiveJobs since we are getting the list now, 
@@ -227,29 +217,26 @@ const PetSitterDashboardScreen: React.FC = () => {
   // Actually, line 166-188 fetches count. I can just use availableRequests.length if I want.
   // Let's keep the count effect for safety unless requested to optimize.
   
-  // Fetch active jobs (Accepted requests for this sitter) - KEEPING AS IS for counter
+  // Fetch active jobs (Accepted requests for this sitter)
   useEffect(() => {
-    const fetchActiveJobs = async () => {
-      try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-        const q = query(
-          collection(db, "requests"),
-          where("sitterId", "==", currentUser.uid),
-          where("status", "==", "Accepted")
-        );
+      const q = query(
+        collection(db, "requests"),
+        where("sitterId", "==", currentUser.uid),
+        where("status", "==", "Accepted")
+      );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          setActiveJobs(snapshot.size);
-        });
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setActiveJobs(snapshot.size);
+      }, (error) => {
+        if (error.code !== "permission-denied") {
+            console.error("Error fetching active jobs:", error);
+        }
+      });
 
-        return () => unsubscribe();
-      } catch (e) {
-        console.error("Error fetching active jobs:", e);
-      }
-    };
-    fetchActiveJobs();
+      return () => unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -323,8 +310,8 @@ const PetSitterDashboardScreen: React.FC = () => {
   };
 
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
+
+  const renderHomeContent = () => (
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingTop: hp(4) }]}
@@ -549,6 +536,52 @@ const PetSitterDashboardScreen: React.FC = () => {
           </Pressable>
         </View>
 
+        {/* Action Buttons Row 2: Messages & Diary */}
+        <View
+          style={[
+            styles.actionButtonsContainer,
+            { paddingHorizontal: wp(5), gap: spacing.nmd, paddingTop: 0 },
+          ]}
+        >
+          <Pressable
+            style={[
+              styles.browseButton,
+              { paddingVertical: hp(1.8), paddingHorizontal: wp(5), backgroundColor: "#605044f0" },
+            ]}
+            onPress={() => navigation.navigate("ChatListScreen" as never)}
+          >
+            <MaterialIcons
+              name="chat"
+              size={20}
+              color={COLORS.white}
+              style={{ marginRight: spacing.sm }}
+            />
+            <Text
+              style={[styles.browseButtonText, { fontSize: fonts.regular }]}
+            >
+              Messages
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.browseButton,
+              { paddingVertical: hp(1.8), paddingHorizontal: wp(5), backgroundColor: "#605044f0" },
+            ]}
+            onPress={() => navigation.navigate("DiaryScreen" as never)}
+          >
+            <MaterialIcons
+              name="book"
+              size={20}
+              color={COLORS.white}
+              style={{ marginRight: spacing.sm }}
+            />
+            <Text style={[styles.browseButtonText, { fontSize: fonts.regular }]}>
+              Diary
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Accepted Requests Section */}
         <View
           style={[
@@ -676,6 +709,14 @@ const PetSitterDashboardScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+  );
+
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={{ flex: 1 }}>
+        {activeTab === "Home" ? renderHomeContent() : <NotificationsView />}
+      </View>
 
       {/* Tab Bar */}
       <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />

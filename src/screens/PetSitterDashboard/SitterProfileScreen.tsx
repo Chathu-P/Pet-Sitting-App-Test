@@ -325,53 +325,12 @@ const SitterProfileScreen: React.FC = () => {
                       { fontSize: fonts.medium, marginLeft: 6 },
                     ]}
                   >
-                    {rating > 0 ? rating.toFixed(1) : "N/A"}
+                    {rating > 0 ? rating.toFixed(1) : ""}
                   </Text>
                 </View>
               </View>
 
-              <View style={{ marginTop: spacing.nmd }}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <MaterialIcons
-                    name="workspace-premium"
-                    size={16}
-                    color="#7C3AED"
-                  />
-                  <Text
-                    style={[
-                      styles.badgesTitle,
-                      { fontSize: fonts.small, marginLeft: 6 },
-                    ]}
-                  >
-                    Your Badges
-                  </Text>
-                </View>
-                {badges.length > 0 ? (
-                  <View style={[styles.badgesRow, { marginTop: 8 }]}>
-                    {badges.slice(0, 2).map((badge, index) => (
-                      <View key={index} style={[styles.badge, styles.badgeAccent]}>
-                        <MaterialIcons
-                          name={badge.icon as any}
-                          size={14}
-                          color={COLORS.white}
-                        />
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            { fontSize: fonts.small, marginLeft: 6 },
-                          ]}
-                        >
-                          {badge.name}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 8 }]}>
-                    No badges earned yet
-                  </Text>
-                )}
-              </View>
+
             </View>
           </View>
 
@@ -579,19 +538,6 @@ const styles = StyleSheet.create({
   subtitle: { color: "#7E7E7E" },
   rating: { color: COLORS.secondary, fontWeight: "700" },
 
-  badgesTitle: { color: COLORS.secondary, fontWeight: "700" },
-  badgesRow: { flexDirection: "row", gap: 10 },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#7C3AED",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeAccent: { backgroundColor: "#D946EF" },
-  badgeText: { color: COLORS.white, fontWeight: "700" },
-
   sectionTitle: { color: COLORS.secondary, fontWeight: "700" },
   helperText: { color: "#7E7E7E" },
   bodyText: { color: COLORS.secondary },
@@ -617,10 +563,10 @@ const styles = StyleSheet.create({
   skillChipActive: { backgroundColor: "#F4EAFF" },
   skillChipInactive: { backgroundColor: "#EEE7E1" },
   skillText: { color: COLORS.secondary, fontWeight: "600" },
-  skillTextActive: { color: "#7C3AED", fontWeight: "700" },
+  skillTextActive: { color: "#b76610ff", fontWeight: "700" },
 
   saveBtn: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#a7560eff",
     borderRadius: BORDER_RADIUS.md,
     alignItems: "center",
     justifyContent: "center",

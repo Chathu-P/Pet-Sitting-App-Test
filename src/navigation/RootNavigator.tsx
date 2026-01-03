@@ -34,6 +34,10 @@ import {
 import { auth, db } from "../services/firebase";
 import { getIdTokenResult, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import ChatListScreen from "../screens/Chat-Diary-Notifications/ChatListScreen";
+import ChatScreen from "../screens/Chat-Diary-Notifications/ChatScreen";
+import DiaryScreen from "../screens/Chat-Diary-Notifications/DiaryScreen";
+import AddDiaryEntryScreen from "../screens/Chat-Diary-Notifications/AddDiaryEntryScreen";
 
 export type RootStackParamList = {
   HomeScreen: undefined;
@@ -55,6 +59,10 @@ export type RootStackParamList = {
   GiveBadgeScreen: { sitterId: string; sitterName: string };
   PasswordResetScreen: undefined;
   ResetPasswordScreen: { email?: string; oobCode?: string };
+  ChatListScreen: undefined;
+  ChatScreen: { chatId: string; otherUserId: string; otherUserName: string };
+  DiaryScreen: undefined;
+  AddDiaryEntryScreen: { event?: any };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -241,11 +249,20 @@ export default function RootNavigator() {
           name="AdminDashboardScreen"
           component={AdminDashboardScreen}
         />
-        <Stack.Screen name="AdminUsersScreen" component={AdminUsersScreen} />
         <Stack.Screen
           name="AdminRequestsScreen"
           component={AdminRequestsScreen}
         />
+        <Stack.Screen
+          name="AdminUsersScreen"
+          component={AdminUsersScreen}
+        />
+
+        {/* Chat & Diary */}
+        <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+        <Stack.Screen name="ChatScreen" component={ChatScreen} />
+        <Stack.Screen name="DiaryScreen" component={DiaryScreen} />
+        <Stack.Screen name="AddDiaryEntryScreen" component={AddDiaryEntryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

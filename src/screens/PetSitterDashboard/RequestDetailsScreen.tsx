@@ -14,6 +14,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
+import { sendNotification } from "../../services/notifications";
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
 import {
   useResponsive,
@@ -73,11 +74,24 @@ const RequestDetailsScreen: React.FC = () => {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
 
+      // Update request status
       await updateDoc(doc(db, "requests", requestId), {
         status: "Accepted",
         sitterId: currentUser.uid,
         acceptedAt: new Date(),
       });
+
+      // Send notification to the pet owner
+      if (request?.ownerId) {
+        await sendNotification(
+          request.ownerId,
+          "Request Accepted",
+          `Your request for ${request.petName || 'your pet'} has been accepted!`,
+          "system",
+          requestId
+        );
+      }
+
       Alert.alert("Success", "You have accepted this request!");
       navigation.goBack();
     } catch (error) {

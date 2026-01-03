@@ -29,6 +29,7 @@ import { auth, db } from "../../services/firebase";
 import Button from "../../components/Button";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
+import NotificationsView from "../../components/Chat-Diary-Notification/NotificationsView";
 
 // Utils
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
@@ -207,18 +208,34 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   };
 
   const handleSignOut = () => {
-    signOut(auth)
-      .then(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "HomeScreen" }],
-        });
-      })
-      .catch((error) => console.error("Sign out error:", error));
+    const performSignOut = () => {
+      signOut(auth)
+        .then(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "HomeScreen" }],
+          });
+        })
+        .catch((error) => console.error("Sign out error:", error));
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to sign out?")) {
+        performSignOut();
+      }
+    } else {
+      Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: performSignOut,
+        },
+      ]);
+    }
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
+  const renderHomeContent = () => (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <ImageBackground
@@ -269,6 +286,45 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             fullWidth
             onPress={() => navigation.navigate("PetRequestDetails")}
           />
+
+          {/* Messages and Diary Buttons */}
+          <View style={{ flexDirection: "row", gap: spacing.nmd, marginTop: spacing.nmd }}>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "#605044f0",
+                paddingVertical: hp(1.8),
+                borderRadius: BORDER_RADIUS.md,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onPress={() => navigation.navigate("ChatListScreen")}
+            >
+              <Text style={{ fontSize: 18, marginRight: 8 }}>💬</Text>
+              <Text style={{ color: COLORS.white, fontWeight: "600", fontSize: fonts.regular }}>
+                Messages
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "#605044f0",
+                paddingVertical: hp(1.8),
+                borderRadius: BORDER_RADIUS.md,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onPress={() => navigation.navigate("DiaryScreen")}
+            >
+              <Text style={{ fontSize: 18, marginRight: 8 }}>📖</Text>
+              <Text style={{ color: COLORS.white, fontWeight: "600", fontSize: fonts.regular }}>
+                Diary
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <Text
             style={[
@@ -358,6 +414,14 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           ))}
         </View>
       </ScrollView>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      
+      <View style={{ flex: 1 }}>
+        {activeTab === "Home" ? renderHomeContent() : <NotificationsView />}
+      </View>
 
       {/* DETAILS MODAL */}
       <Modal

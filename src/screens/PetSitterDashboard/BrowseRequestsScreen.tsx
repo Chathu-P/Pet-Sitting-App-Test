@@ -31,6 +31,7 @@ interface MatchRequest {
   endDate: string;
   location: string;
   reasons: string[];
+  ownerId: string; // Added ownerId
 }
 
 const BrowseRequestsScreen: React.FC = () => {
@@ -43,6 +44,7 @@ const BrowseRequestsScreen: React.FC = () => {
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [sitterProfile, setSitterProfile] = useState<any>(null); // To store sitter's address, skills, etc.
+  const [chatLoading, setChatLoading] = useState(false);
 
   // Fetch Sitter Profile for Matching
   React.useEffect(() => {
@@ -144,6 +146,63 @@ const BrowseRequestsScreen: React.FC = () => {
     }
   };
 
+  // Chat Handler
+  const handleChat = async (ownerId: string) => {
+    if (chatLoading) return;
+    if (!ownerId) {
+        alert("Cannot chat: details missing");
+        return;
+    }
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    setChatLoading(true);
+    try {
+        // 1. Check if chat exists
+        const chatsRef = collection(db, "chats");
+        const q = query(chatsRef, where("participants", "array-contains", currentUser.uid));
+        const querySnapshot = await import("firebase/firestore").then(mod => mod.getDocs(q));
+        
+        let existingChatId = null;
+        
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.participants.includes(ownerId)) {
+                existingChatId = doc.id;
+            }
+        });
+
+        if (existingChatId) {
+             (navigation as any).navigate("ChatScreen", {
+                chatId: existingChatId,
+                otherUserId: ownerId,
+                otherUserName: "Pet Owner"
+            });
+        } else {
+            // 2. Create new chat
+            const newChatDoc = await import("firebase/firestore").then(mod => mod.addDoc(collection(db, "chats"), {
+                participants: [currentUser.uid, ownerId],
+                createdAt: mod.serverTimestamp(),
+                lastMessage: "",
+                updatedAt: mod.serverTimestamp(),
+                isGroup: false,
+                name: "New Chat" // Can update later
+            }));
+
+             (navigation as any).navigate("ChatScreen", {
+                chatId: newChatDoc.id,
+                otherUserId: ownerId,
+                otherUserName: "Pet Owner"
+            });
+        }
+    } catch (e) {
+        console.error("Error opening chat:", e);
+        alert("Failed to open chat");
+    } finally {
+        setChatLoading(false);
+    }
+  };
+
   // Fetch requests from Firestore
   React.useEffect(() => {
     const q = query(
@@ -191,7 +250,8 @@ const BrowseRequestsScreen: React.FC = () => {
           startDate: formatDate(data.startDate),
           endDate: formatDate(data.endDate),
           location: data.location || data.city || data.address || "Unknown Location",
-          reasons: reasons.length > 0 ? reasons : ["General profile match"]
+          reasons: reasons.length > 0 ? reasons : ["General profile match"],
+          ownerId: data.ownerId || "" // Add ownerId
         });
       });
       
@@ -396,6 +456,27 @@ const BrowseRequestsScreen: React.FC = () => {
                       </Text>
                     </View>
                   ))}
+                </View>
+
+                {/* Add Chat Button */}
+                <View style={{ marginTop: 15 }}>
+                  <Pressable
+                     style={{
+                         backgroundColor: "#E0F2FE", // Light blue
+                         flexDirection: "row",
+                         alignItems: "center",
+                         justifyContent: "center",
+                         paddingVertical: 10,
+                         borderRadius: 12,
+                     }}
+                     onPress={(e) => {
+                         e.stopPropagation(); // Prevent card click
+                         handleChat(r.ownerId);
+                     }}
+                  >
+                      <MaterialIcons name="chat" size={18} color="#0284C7" />
+                      <Text style={{ marginLeft: 8, color: "#0284C7", fontWeight: "600" }}>Chat with Owner</Text>
+                  </Pressable>
                 </View>
               </Pressable>
               ))

@@ -219,18 +219,7 @@ const AdminDashboardScreen: React.FC = () => {
             </View>
           </View>
 
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
-            <View style={[styles.card, { padding: wp(4) }]}>
-              <Text style={[styles.cardTitle, { fontSize: fonts.medium }]}>
-                Recent Activity
-              </Text>
-              <View style={{ alignItems: "center", marginTop: spacing.lg }}>
-                <Text style={[styles.emptyText, { fontSize: fonts.regular }]}>
-                  No recent activity to show
-                </Text>
-              </View>
-            </View>
-          </View>
+
         </ScrollView>
       </SafeAreaView>
     </ImageBackground>
