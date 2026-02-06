@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ImageBackground,
   SafeAreaView,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Button from "../components/Button";
@@ -24,6 +25,59 @@ const HomeScreen2: React.FC = () => {
   const { width, height, wp, hp, isSmallDevice } = useResponsive();
   const spacing = useResponsiveSpacing();
   const fonts = useResponsiveFonts();
+
+  // Animation values
+  const logoScaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const logoOpacityAnim = React.useRef(new Animated.Value(0)).current;
+  const taglineOpacityAnim = React.useRef(new Animated.Value(0)).current;
+  const taglineTranslateAnim = React.useRef(new Animated.Value(30)).current;
+  const buttonsOpacityAnim = React.useRef(new Animated.Value(0)).current;
+  const buttonsTranslateAnim = React.useRef(new Animated.Value(50)).current;
+
+  // Trigger animations on mount
+  React.useEffect(() => {
+    Animated.sequence([
+      // Logo animation
+      Animated.parallel([
+        Animated.timing(logoScaleAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacityAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Tagline animation
+      Animated.parallel([
+        Animated.timing(taglineOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(taglineTranslateAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Buttons animation
+      Animated.parallel([
+        Animated.timing(buttonsOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonsTranslateAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   // Responsive sizing
   const logoSize = getSafeDimensions(wp(35), 100, 160);
@@ -59,7 +113,7 @@ const HomeScreen2: React.FC = () => {
             ]}
           >
             {/* Logo positioned above arcs */}
-            <View
+            <Animated.View
               style={[
                 styles.logoShadow,
                 {
@@ -67,6 +121,8 @@ const HomeScreen2: React.FC = () => {
                   top: -logoSize * 0.3,
                   marginTop: hp(8),
                   zIndex: 10,
+                  opacity: logoOpacityAnim,
+                  transform: [{ scale: logoScaleAnim }],
                 },
               ]}
             >
@@ -76,7 +132,7 @@ const HomeScreen2: React.FC = () => {
                 borderColor="#F5C47A"
                 shadowEnabled={true}
               />
-            </View>
+            </Animated.View>
 
             {/* Content overlay on arcs */}
             <View
@@ -89,7 +145,7 @@ const HomeScreen2: React.FC = () => {
               ]}
             >
               {/* Top Tagline */}
-              <Text
+              <Animated.Text
                 style={[
                   styles.tagline,
                   {
@@ -97,16 +153,27 @@ const HomeScreen2: React.FC = () => {
                     lineHeight: fonts.medium * 1.5,
                     marginTop: spacing.lg,
                     marginBottom: spacing.lg,
+                    opacity: taglineOpacityAnim,
+                    transform: [{ translateY: taglineTranslateAnim }],
                   },
                 ]}
                 numberOfLines={2}
                 adjustsFontSizeToFit={true}
               >
                 "Trust, care, and cuddles{"\n"}right at your pet's doorstep."
-              </Text>
+              </Animated.Text>
 
               {/* Buttons */}
-              <View style={[styles.ctaColumn, { gap: spacing.lg }]}>
+              <Animated.View
+                style={[
+                  styles.ctaColumn,
+                  {
+                    gap: spacing.lg,
+                    opacity: buttonsOpacityAnim,
+                    transform: [{ translateY: buttonsTranslateAnim }],
+                  },
+                ]}
+              >
                 <Button
                   title="Login"
                   onPress={() => navigation.navigate("LoginScreen" as never)}
@@ -139,23 +206,25 @@ const HomeScreen2: React.FC = () => {
                   ]}
                   textStyle={[styles.pillText, { fontSize: fonts.large }]}
                 />
-              </View>
+              </Animated.View>
 
               {/* Bottom Tagline */}
-              <Text
+              <Animated.Text
                 style={[
                   styles.tagline,
                   {
                     fontSize: fonts.regular,
                     lineHeight: fonts.regular * 1.4,
                     marginTop: spacing.lg,
+                    opacity: taglineOpacityAnim,
+                    transform: [{ translateY: taglineTranslateAnim }],
                   },
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit={true}
               >
                 "Your pets, our passion!"
-              </Text>
+              </Animated.Text>
             </View>
           </View>
         </View>

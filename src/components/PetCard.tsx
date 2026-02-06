@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from "react-native";
 import { Pet } from "../types/Pet";
 
 interface PetCardProps {
@@ -8,16 +15,46 @@ interface PetCardProps {
 }
 
 const PetCard: React.FC<PetCardProps> = ({ pet, onPress }) => {
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 0.97,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Image source={{ uri: pet.imageUrl }} style={styles.image} />
-      <View style={styles.content}>
-        <Text style={styles.name}>{pet.name}</Text>
-        <Text style={styles.breed}>{pet.breed}</Text>
-        <Text style={styles.location}>{pet.location}</Text>
-        <Text style={styles.price}>${pet.price}/day</Text>
-      </View>
-    </TouchableOpacity>
+    <Animated.View
+      style={{
+        transform: [{ scale: scaleAnim }],
+      }}
+    >
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+      >
+        <Image source={{ uri: pet.imageUrl }} style={styles.image} />
+        <View style={styles.content}>
+          <Text style={styles.name}>{pet.name}</Text>
+          <Text style={styles.breed}>{pet.breed}</Text>
+          <Text style={styles.location}>{pet.location}</Text>
+          <Text style={styles.price}>${pet.price}/day</Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

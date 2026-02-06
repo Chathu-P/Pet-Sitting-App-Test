@@ -106,7 +106,7 @@ export default function RootNavigator() {
 
     initUrl();
     const sub = Linking.addEventListener("url", ({ url }) =>
-      handleDeepLink(url)
+      handleDeepLink(url),
     );
 
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -114,7 +114,7 @@ export default function RootNavigator() {
         setCurrentUser(null);
         setRole(null);
         setInitializing(false);
-        
+
         // Don't auto-navigate to HomeScreen on logout
         // This allows LoginScreen to show error messages
         console.log("RootNavigator: User signed out, not auto-navigating");
@@ -125,19 +125,20 @@ export default function RootNavigator() {
         // Fetch Firestore role for all users
         const snap = await getDoc(doc(db, "users", u.uid));
         const data = snap.exists() ? (snap.data() as any) : null;
-        const userRole = (data?.role as "owner" | "sitter" | "admin" | undefined) ?? null;
+        const userRole =
+          (data?.role as "owner" | "sitter" | "admin" | undefined) ?? null;
         const isActive = data?.isActive !== false; // Default to true if not set
-        
+
         console.log("RootNavigator - User role:", userRole);
         console.log("RootNavigator - User active status:", isActive);
-        
+
         // Check if user is blocked
         if (!isActive) {
           console.log("RootNavigator - User is blocked, signing out");
           await auth.signOut(); // This will trigger the auth state change again
           return; // Don't navigate, let the signOut trigger handle navigation to HomeScreen
         }
-        
+
         setRole(userRole);
 
         if (userRole === "admin") {
@@ -157,7 +158,7 @@ export default function RootNavigator() {
           });
         }
       } catch (error) {
-        console.error("Error fetching user role:", error);
+        //console.error("Error fetching user role:", error);
         setRole(null);
         navigationRef.current?.reset({
           index: 0,
@@ -192,7 +193,9 @@ export default function RootNavigator() {
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator
         initialRouteName="HomeScreen"
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+        }}
       >
         {/* Unauthenticated stack */}
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
@@ -253,16 +256,16 @@ export default function RootNavigator() {
           name="AdminRequestsScreen"
           component={AdminRequestsScreen}
         />
-        <Stack.Screen
-          name="AdminUsersScreen"
-          component={AdminUsersScreen}
-        />
+        <Stack.Screen name="AdminUsersScreen" component={AdminUsersScreen} />
 
         {/* Chat & Diary */}
         <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
         <Stack.Screen name="ChatScreen" component={ChatScreen} />
         <Stack.Screen name="DiaryScreen" component={DiaryScreen} />
-        <Stack.Screen name="AddDiaryEntryScreen" component={AddDiaryEntryScreen} />
+        <Stack.Screen
+          name="AddDiaryEntryScreen"
+          component={AddDiaryEntryScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

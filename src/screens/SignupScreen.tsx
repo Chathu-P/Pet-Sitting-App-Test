@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Header from "../components/Header";
@@ -26,6 +27,26 @@ const SignupScreen: React.FC = () => {
   const fonts = useResponsiveFonts();
   const logoSize = getSafeDimensions(wp(30), 90, 140);
 
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const logoScaleAnim = React.useRef(new Animated.Value(0.8)).current;
+
+  // Trigger animation on mount
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoScaleAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, logoScaleAnim]);
+
   return (
     <ImageBackground
       source={require("../../assets/signup/signup.jpg")}
@@ -37,16 +58,18 @@ const SignupScreen: React.FC = () => {
         <Header title="Sign Up" marginTop={hp(4)} />
 
         {/* Logo - positioned to overlap */}
-        <View
+        <Animated.View
           style={[
             styles.centerContainer,
             {
               paddingBottom: hp(0.1),
+              opacity: fadeAnim,
+              transform: [{ scale: logoScaleAnim }],
             },
           ]}
         >
           <LogoCircle size={logoSize} />
-        </View>
+        </Animated.View>
 
         {/* Who You Are Section */}
         <View
@@ -55,7 +78,7 @@ const SignupScreen: React.FC = () => {
             {
               paddingHorizontal: wp(5),
               paddingVertical: spacing.lg,
-              paddingTop: spacing.md,
+              paddingTop: spacing.lg,
               marginBottom: spacing.lg,
             },
           ]}
@@ -105,7 +128,7 @@ const SignupScreen: React.FC = () => {
               styles.card,
               {
                 borderRadius: wp(6),
-                padding: spacing.md,
+                padding: spacing.lg,
               },
             ]}
             activeOpacity={0.9}
@@ -146,7 +169,7 @@ const SignupScreen: React.FC = () => {
               styles.card,
               {
                 borderRadius: wp(6),
-                padding: spacing.md,
+                padding: spacing.lg,
               },
             ]}
             activeOpacity={0.9}

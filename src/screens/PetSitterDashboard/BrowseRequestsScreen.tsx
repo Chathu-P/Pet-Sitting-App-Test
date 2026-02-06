@@ -7,9 +7,17 @@ import {
   ScrollView,
   Pressable,
   ImageBackground,
-  ActivityIndicator,
 } from "react-native";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
@@ -19,6 +27,7 @@ import {
   useResponsiveSpacing,
   useResponsiveFonts,
 } from "../../utils/responsive";
+import { SkeletonList } from "../../components/SkeletonLoader";
 
 interface MatchRequest {
   id: string;
@@ -55,16 +64,16 @@ const BrowseRequestsScreen: React.FC = () => {
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const profileDoc = await getDoc(doc(db, "sitterProfiles", user.uid));
-        
+
         const userData = userDoc.exists() ? userDoc.data() : {};
         const profileData = profileDoc.exists() ? profileDoc.data() : {};
 
         setSitterProfile({
-           address: userData.address || "",
-           city: userData.address ? userData.address.split(',')[0].trim() : "", // Simple city extraction
-           skills: profileData.skills || {},
-           yearsOfExperience: profileData.experience?.yearsOfExperience || 0,
-           badges: profileData.badges || {}
+          address: userData.address || "",
+          city: userData.address ? userData.address.split(",")[0].trim() : "", // Simple city extraction
+          skills: profileData.skills || {},
+          yearsOfExperience: profileData.experience?.yearsOfExperience || 0,
+          badges: profileData.badges || {},
         });
       } catch (e) {
         console.error("Error fetching sitter for matching:", e);
@@ -75,62 +84,75 @@ const BrowseRequestsScreen: React.FC = () => {
 
   // Calculate Best Match Score
   const calculateMatchScore = (req: any, sitter: any) => {
-      if (!sitter) return { score: 70, reasons: [] }; // Default random baseline if no sitter data
+    if (!sitter) return { score: 70, reasons: [] }; // Default random baseline if no sitter data
 
-      let score = 0;
-      const reasons: string[] = [];
+    let score = 0;
+    const reasons: string[] = [];
 
-      // 1. Location Match (40%)
-      const reqCity = (req.city || req.location || "").toLowerCase();
-      const sitterCity = (sitter.city || "").toLowerCase();
-      const sitterAddress = (sitter.address || "").toLowerCase();
-      
-      if (reqCity && (sitterCity.includes(reqCity) || sitterAddress.includes(reqCity))) {
-          score += 40;
-          reasons.push("Location is convenient for you");
+    // 1. Location Match (40%)
+    const reqCity = (req.city || req.location || "").toLowerCase();
+    const sitterCity = (sitter.city || "").toLowerCase();
+    const sitterAddress = (sitter.address || "").toLowerCase();
+
+    if (
+      reqCity &&
+      (sitterCity.includes(reqCity) || sitterAddress.includes(reqCity))
+    ) {
+      score += 40;
+      reasons.push("Location is convenient for you");
+    }
+
+    // 2. Pet Type Match (30%)
+    const type = (req.petType || "").toLowerCase(); // dog, cat
+    const skills = sitter.skills || {};
+
+    let hasPetSkill = false;
+    if (
+      type === "dog" &&
+      (skills.bigDogs || skills.smallDogs || skills.puppies)
+    )
+      hasPetSkill = true;
+    else if (type === "cat" && (skills.cats || skills.kittens))
+      hasPetSkill = true;
+    // Default to true if unspecified or generic match needed
+
+    if (hasPetSkill) {
+      score += 30;
+      reasons.push(`You have experience with ${type}s`);
+    }
+
+    // 3. Special Needs / Skills (20%)
+    const needs =
+      (req.behaviorNotes || "").toLowerCase() +
+      (req.messageToVolunteers || "").toLowerCase();
+    let specialSkillNeeded = false;
+    let hasSpecialSkill = false;
+
+    if (needs.includes("medical") || needs.includes("medication")) {
+      specialSkillNeeded = true;
+      if (skills.medicalCare) hasSpecialSkill = true;
+    }
+
+    if (specialSkillNeeded) {
+      if (hasSpecialSkill) {
+        score += 20;
+        reasons.push("You have the required medical skills");
       }
+    } else {
+      // Free points if no special needs
+      score += 20;
+    }
 
-      // 2. Pet Type Match (30%)
-      const type = (req.petType || "").toLowerCase(); // dog, cat
-      const skills = sitter.skills || {};
-      
-      let hasPetSkill = false;
-      if (type === "dog" && (skills.bigDogs || skills.smallDogs || skills.puppies)) hasPetSkill = true;
-      else if (type === "cat" && (skills.cats || skills.kittens)) hasPetSkill = true;
-      // Default to true if unspecified or generic match needed
-      
-      if (hasPetSkill) {
-          score += 30;
-          reasons.push(`You have experience with ${type}s`);
-      }
+    // 4. Experience & Badges (10%)
+    if (
+      sitter.yearsOfExperience >= 2 ||
+      Object.keys(sitter.badges || {}).length > 0
+    ) {
+      score += 10;
+      reasons.push("Your experience matches");
+    }
 
-      // 3. Special Needs / Skills (20%)
-      const needs = (req.behaviorNotes || "").toLowerCase() + (req.messageToVolunteers || "").toLowerCase();
-      let specialSkillNeeded = false;
-      let hasSpecialSkill = false;
-
-      if (needs.includes("medical") || needs.includes("medication")) {
-          specialSkillNeeded = true;
-          if (skills.medicalCare) hasSpecialSkill = true;
-      }
-      
-      if (specialSkillNeeded) {
-         if (hasSpecialSkill) {
-             score += 20;
-             reasons.push("You have the required medical skills");
-         }
-      } else {
-         // Free points if no special needs
-         score += 20;
-      }
-
-      // 4. Experience & Badges (10%)
-      if (sitter.yearsOfExperience >= 2 || Object.keys(sitter.badges || {}).length > 0) {
-          score += 10;
-          reasons.push("Your experience matches");
-      }
-
-      return { score, reasons };
+    return { score, reasons };
   };
 
   // Helper to safely format dates
@@ -140,7 +162,7 @@ const BrowseRequestsScreen: React.FC = () => {
       // Handle Firestore Timestamp if applicable
       const date = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
       if (isNaN(date.getTime())) return "N/A";
-      return date.toISOString().split('T')[0];
+      return date.toISOString().split("T")[0];
     } catch (e) {
       return "N/A";
     }
@@ -150,56 +172,63 @@ const BrowseRequestsScreen: React.FC = () => {
   const handleChat = async (ownerId: string) => {
     if (chatLoading) return;
     if (!ownerId) {
-        alert("Cannot chat: details missing");
-        return;
+      alert("Cannot chat: details missing");
+      return;
     }
     const currentUser = auth.currentUser;
     if (!currentUser) return;
 
     setChatLoading(true);
     try {
-        // 1. Check if chat exists
-        const chatsRef = collection(db, "chats");
-        const q = query(chatsRef, where("participants", "array-contains", currentUser.uid));
-        const querySnapshot = await import("firebase/firestore").then(mod => mod.getDocs(q));
-        
-        let existingChatId = null;
-        
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data.participants.includes(ownerId)) {
-                existingChatId = doc.id;
-            }
-        });
+      // 1. Check if chat exists
+      const chatsRef = collection(db, "chats");
+      const q = query(
+        chatsRef,
+        where("participants", "array-contains", currentUser.uid),
+      );
+      const querySnapshot = await import("firebase/firestore").then((mod) =>
+        mod.getDocs(q),
+      );
 
-        if (existingChatId) {
-             (navigation as any).navigate("ChatScreen", {
-                chatId: existingChatId,
-                otherUserId: ownerId,
-                otherUserName: "Pet Owner"
-            });
-        } else {
-            // 2. Create new chat
-            const newChatDoc = await import("firebase/firestore").then(mod => mod.addDoc(collection(db, "chats"), {
-                participants: [currentUser.uid, ownerId],
-                createdAt: mod.serverTimestamp(),
-                lastMessage: "",
-                updatedAt: mod.serverTimestamp(),
-                isGroup: false,
-                name: "New Chat" // Can update later
-            }));
+      let existingChatId = null;
 
-             (navigation as any).navigate("ChatScreen", {
-                chatId: newChatDoc.id,
-                otherUserId: ownerId,
-                otherUserName: "Pet Owner"
-            });
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.participants.includes(ownerId)) {
+          existingChatId = doc.id;
         }
+      });
+
+      if (existingChatId) {
+        (navigation as any).navigate("ChatScreen", {
+          chatId: existingChatId,
+          otherUserId: ownerId,
+          otherUserName: "Pet Owner",
+        });
+      } else {
+        // 2. Create new chat
+        const newChatDoc = await import("firebase/firestore").then((mod) =>
+          mod.addDoc(collection(db, "chats"), {
+            participants: [currentUser.uid, ownerId],
+            createdAt: mod.serverTimestamp(),
+            lastMessage: "",
+            updatedAt: mod.serverTimestamp(),
+            isGroup: false,
+            name: "New Chat", // Can update later
+          }),
+        );
+
+        (navigation as any).navigate("ChatScreen", {
+          chatId: newChatDoc.id,
+          otherUserId: ownerId,
+          otherUserName: "Pet Owner",
+        });
+      }
     } catch (e) {
-        console.error("Error opening chat:", e);
-        alert("Failed to open chat");
+      console.error("Error opening chat:", e);
+      alert("Failed to open chat");
     } finally {
-        setChatLoading(false);
+      setChatLoading(false);
     }
   };
 
@@ -207,60 +236,69 @@ const BrowseRequestsScreen: React.FC = () => {
   React.useEffect(() => {
     const q = query(
       collection(db, "requests"),
-      where("status", "in", ["Open", "Pending"])
+      where("status", "in", ["Open", "Pending"]),
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRequests: MatchRequest[] = [];
-      
-      snapshot.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        
-        // CHECK IF EXPIRED
-        if (data.endDate) {
-           const endDate = data.endDate.toDate ? data.endDate.toDate() : new Date(data.endDate);
-           
-           // Normalize comparison to prevent premature expiry of "today's" requests
-           const today = new Date();
-           today.setHours(0, 0, 0, 0); // Start of today
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedRequests: MatchRequest[] = [];
 
-           const checkDate = new Date(endDate);
-           checkDate.setHours(0, 0, 0, 0); // Start of end date
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
 
-           if (!isNaN(checkDate.getTime()) && checkDate < today) {
-               // Expired (End date is yesterday or earlier)
-               // We do this silently in background
-               updateDoc(doc(db, "requests", docSnap.id), {
-                   status: "Completed",
-                   completedAt: new Date()
-               }).catch(err => console.error("Error auto-completing request:", err));
-               return; // Don't add to list
-           }
-        }
+          // CHECK IF EXPIRED
+          if (data.endDate) {
+            const endDate = data.endDate.toDate
+              ? data.endDate.toDate()
+              : new Date(data.endDate);
 
-        const { score, reasons } = calculateMatchScore(data, sitterProfile);
-        
-        fetchedRequests.push({
-          id: docSnap.id,
-          petName: data.petName || "Unknown Pet",
-          breed: data.breed || data.petType || "Unknown Breed",
-          ageYears: parseInt(data.age) || 0,
-          matchPct: score > 0 ? score : 50, // Minimum 50 to look decent
-          traits: data.temperament ? [data.temperament] : ["Friendly"],
-          startDate: formatDate(data.startDate),
-          endDate: formatDate(data.endDate),
-          location: data.location || data.city || data.address || "Unknown Location",
-          reasons: reasons.length > 0 ? reasons : ["General profile match"],
-          ownerId: data.ownerId || "" // Add ownerId
+            // Normalize comparison to prevent premature expiry of "today's" requests
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+
+            const checkDate = new Date(endDate);
+            checkDate.setHours(0, 0, 0, 0); // Start of end date
+
+            if (!isNaN(checkDate.getTime()) && checkDate < today) {
+              // Expired (End date is yesterday or earlier)
+              // We do this silently in background
+              updateDoc(doc(db, "requests", docSnap.id), {
+                status: "Completed",
+                completedAt: new Date(),
+              }).catch((err) =>
+                console.error("Error auto-completing request:", err),
+              );
+              return; // Don't add to list
+            }
+          }
+
+          const { score, reasons } = calculateMatchScore(data, sitterProfile);
+
+          fetchedRequests.push({
+            id: docSnap.id,
+            petName: data.petName || "Unknown Pet",
+            breed: data.breed || data.petType || "Unknown Breed",
+            ageYears: parseInt(data.age) || 0,
+            matchPct: score > 0 ? score : 50, // Minimum 50 to look decent
+            traits: data.temperament ? [data.temperament] : ["Friendly"],
+            startDate: formatDate(data.startDate),
+            endDate: formatDate(data.endDate),
+            location:
+              data.location || data.city || data.address || "Unknown Location",
+            reasons: reasons.length > 0 ? reasons : ["General profile match"],
+            ownerId: data.ownerId || "", // Add ownerId
+          });
         });
-      });
-      
-      setRequests(fetchedRequests);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching requests:", error);
-      setLoading(false);
-    });
+
+        setRequests(fetchedRequests);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching requests:", error);
+        setLoading(false);
+      },
+    );
 
     return () => unsubscribe();
   }, [sitterProfile]); // Re-run when sitterProfile loads to update scores
@@ -339,147 +377,195 @@ const BrowseRequestsScreen: React.FC = () => {
           {/* Cards */}
           <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
             {loading ? (
-              <ActivityIndicator size="large" color="#7C3AED" style={{ marginTop: 20 }} />
+              <SkeletonList count={4} type="request" />
             ) : requests.length === 0 ? (
-              <Text style={{ textAlign: "center", color: COLORS.secondary, marginTop: 20 }}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: COLORS.secondary,
+                  marginTop: 20,
+                }}
+              >
                 No open requests found.
               </Text>
             ) : (
               // Filter and Sort based on Tab
               requests
                 // .filter(r => tab === "all" || r.matchPct >= 70) // Removed threshold as requested
-                .sort((a, b) => tab === "best" ? b.matchPct - a.matchPct : 0) // Sort by match for 'best'
+                .sort((a, b) => (tab === "best" ? b.matchPct - a.matchPct : 0)) // Sort by match for 'best'
                 .slice(0, tab === "best" ? 3 : undefined) // Top 3 for best match
                 .map((r) => (
-              <Pressable
-                key={r.id}
-                onPress={() => (navigation as any).navigate("RequestDetailsScreen", { requestId: r.id })}
-                style={[styles.card, { padding: wp(4), marginBottom: hp(2) }]}
-              >
-                {/* Top row */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View>
-                    <Text style={[styles.petName, { fontSize: fonts.large }]}>
-                      {r.petName}
-                    </Text>
-                    <Text style={[styles.subTitle, { fontSize: fonts.small }]}>
-                      {r.breed} , {r.ageYears} years old
-                    </Text>
-                  </View>
-                  <View
+                  <Pressable
+                    key={r.id}
+                    onPress={() =>
+                      (navigation as any).navigate("RequestDetailsScreen", {
+                        requestId: r.id,
+                      })
+                    }
                     style={[
-                      styles.matchPill,
-                      { paddingHorizontal: wp(3), paddingVertical: hp(0.6) },
+                      styles.card,
+                      { padding: wp(4), marginBottom: hp(2) },
                     ]}
                   >
-                    <MaterialIcons name="bolt" size={14} color="#7C3AED" />
-                    <Text style={[styles.matchText, { fontSize: fonts.small }]}>
-                      {" "}
-                      {r.matchPct}% Match
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Traits */}
-                <View style={[styles.traitsRow, { marginTop: spacing.nmd }]}>
-                  {r.traits.map((t, i) => (
+                    {/* Top row */}
                     <View
-                      key={`${r.id}-t-${i}`}
-                      style={[
-                        styles.traitChip,
-                        { paddingHorizontal: wp(3), paddingVertical: hp(0.8) },
-                      ]}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
                     >
-                      <Text
-                        style={[styles.traitText, { fontSize: fonts.small }]}
+                      <View>
+                        <Text
+                          style={[styles.petName, { fontSize: fonts.large }]}
+                        >
+                          {r.petName}
+                        </Text>
+                        <Text
+                          style={[styles.subTitle, { fontSize: fonts.small }]}
+                        >
+                          {r.breed} , {r.ageYears} years old
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.matchPill,
+                          {
+                            paddingHorizontal: wp(3),
+                            paddingVertical: hp(0.6),
+                          },
+                        ]}
                       >
-                        {t}
-                      </Text>
+                        <MaterialIcons name="bolt" size={14} color="#7C3AED" />
+                        <Text
+                          style={[styles.matchText, { fontSize: fonts.small }]}
+                        >
+                          {" "}
+                          {r.matchPct}% Match
+                        </Text>
+                      </View>
                     </View>
-                  ))}
-                </View>
 
-                {/* Dates */}
-                <View style={[styles.row, { marginTop: spacing.nmd }]}>
-                  <MaterialIcons name="date-range" size={18} color="#7C3AED" />
-                  <Text
-                    style={[
-                      styles.metaText,
-                      { fontSize: fonts.small, marginLeft: 8 },
-                    ]}
-                  >
-                    {r.startDate} to {r.endDate}
-                  </Text>
-                </View>
-
-                {/* Location */}
-                <View style={[styles.row, { marginTop: spacing.sm }]}>
-                  <MaterialIcons name="location-on" size={18} color="#7C3AED" />
-                  <Text
-                    style={[
-                      styles.metaText,
-                      { fontSize: fonts.small, marginLeft: 8 },
-                    ]}
-                  >
-                    {r.location}
-                  </Text>
-                </View>
-
-                {/* Why great match */}
-                <View style={{ marginTop: spacing.lg }}>
-                  <Text style={[styles.whyTitle, { fontSize: fonts.small }]}>
-                    Why this is a great match:
-                  </Text>
-                  {r.reasons.map((rsn, i) => (
+                    {/* Traits */}
                     <View
-                      key={`${r.id}-rsn-${i}`}
-                      style={[styles.row, { marginTop: 6 }]}
+                      style={[styles.traitsRow, { marginTop: spacing.nmd }]}
                     >
+                      {r.traits.map((t, i) => (
+                        <View
+                          key={`${r.id}-t-${i}`}
+                          style={[
+                            styles.traitChip,
+                            {
+                              paddingHorizontal: wp(3),
+                              paddingVertical: hp(0.8),
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.traitText,
+                              { fontSize: fonts.small },
+                            ]}
+                          >
+                            {t}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Dates */}
+                    <View style={[styles.row, { marginTop: spacing.nmd }]}>
                       <MaterialIcons
-                        name="check-circle"
+                        name="date-range"
                         size={18}
-                        color="#16a34a"
+                        color="#7C3AED"
                       />
                       <Text
                         style={[
-                          styles.reasonText,
+                          styles.metaText,
                           { fontSize: fonts.small, marginLeft: 8 },
                         ]}
                       >
-                        {rsn}
+                        {r.startDate} to {r.endDate}
                       </Text>
                     </View>
-                  ))}
-                </View>
 
-                {/* Add Chat Button */}
-                <View style={{ marginTop: 15 }}>
-                  <Pressable
-                     style={{
-                         backgroundColor: "#E0F2FE", // Light blue
-                         flexDirection: "row",
-                         alignItems: "center",
-                         justifyContent: "center",
-                         paddingVertical: 10,
-                         borderRadius: 12,
-                     }}
-                     onPress={(e) => {
-                         e.stopPropagation(); // Prevent card click
-                         handleChat(r.ownerId);
-                     }}
-                  >
-                      <MaterialIcons name="chat" size={18} color="#0284C7" />
-                      <Text style={{ marginLeft: 8, color: "#0284C7", fontWeight: "600" }}>Chat with Owner</Text>
+                    {/* Location */}
+                    <View style={[styles.row, { marginTop: spacing.sm }]}>
+                      <MaterialIcons
+                        name="location-on"
+                        size={18}
+                        color="#7C3AED"
+                      />
+                      <Text
+                        style={[
+                          styles.metaText,
+                          { fontSize: fonts.small, marginLeft: 8 },
+                        ]}
+                      >
+                        {r.location}
+                      </Text>
+                    </View>
+
+                    {/* Why great match */}
+                    <View style={{ marginTop: spacing.lg }}>
+                      <Text
+                        style={[styles.whyTitle, { fontSize: fonts.small }]}
+                      >
+                        Why this is a great match:
+                      </Text>
+                      {r.reasons.map((rsn, i) => (
+                        <View
+                          key={`${r.id}-rsn-${i}`}
+                          style={[styles.row, { marginTop: 6 }]}
+                        >
+                          <MaterialIcons
+                            name="check-circle"
+                            size={18}
+                            color="#16a34a"
+                          />
+                          <Text
+                            style={[
+                              styles.reasonText,
+                              { fontSize: fonts.small, marginLeft: 8 },
+                            ]}
+                          >
+                            {rsn}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Add Chat Button */}
+                    <View style={{ marginTop: 15 }}>
+                      <Pressable
+                        style={{
+                          backgroundColor: "#E0F2FE", // Light blue
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingVertical: 10,
+                          borderRadius: 12,
+                        }}
+                        onPress={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleChat(r.ownerId);
+                        }}
+                      >
+                        <MaterialIcons name="chat" size={18} color="#0284C7" />
+                        <Text
+                          style={{
+                            marginLeft: 8,
+                            color: "#0284C7",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Chat with Owner
+                        </Text>
+                      </Pressable>
+                    </View>
                   </Pressable>
-                </View>
-              </Pressable>
-              ))
+                ))
             )}
           </View>
         </ScrollView>

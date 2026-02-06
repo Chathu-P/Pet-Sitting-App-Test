@@ -21,10 +21,18 @@ import {
   useResponsiveFonts,
 } from "../../utils/responsive";
 import { db } from "../../services/firebase";
-import { collection, onSnapshot, query, doc, getDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  doc,
+  getDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { useAdminGuard } from "./useAdminGuard";
 import AdminTabs from "./AdminTabs";
 import AdminHeader from "./AdminHeader";
+import { SkeletonList } from "../../components/SkeletonLoader";
 
 interface SittingRequest {
   id: string;
@@ -68,7 +76,7 @@ const AdminRequestsScreen: React.FC = () => {
   // Modal States
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<SittingRequest | null>(
-    null
+    null,
   );
   const [ownerDetails, setOwnerDetails] = useState<UserDetails | null>(null);
   const [sitterDetails, setSitterDetails] = useState<UserDetails | null>(null);
@@ -162,7 +170,12 @@ const AdminRequestsScreen: React.FC = () => {
     }
 
     // Fetch Sitter if assigned/completed
-    if (req.sitterId && (req.status === "Accepted" || req.status === "Completed" || req.status === "Assigned")) {
+    if (
+      req.sitterId &&
+      (req.status === "Accepted" ||
+        req.status === "Completed" ||
+        req.status === "Assigned")
+    ) {
       const sitter = await fetchUserDetails(req.sitterId);
       setSitterDetails(sitter);
     }
@@ -189,7 +202,7 @@ const AdminRequestsScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -201,11 +214,18 @@ const AdminRequestsScreen: React.FC = () => {
   if (checking || loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        <ImageBackground
+          source={require("../../../assets/admin/adminbg.png")}
+          style={styles.background}
+          resizeMode="cover"
         >
-          <ActivityIndicator size="large" color="#91521B" />
-        </View>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={{ paddingTop: 60 }}
+          >
+            <SkeletonList count={6} type="request" />
+          </ScrollView>
+        </ImageBackground>
       </SafeAreaView>
     );
   }
@@ -354,7 +374,9 @@ const AdminRequestsScreen: React.FC = () => {
           onRequestClose={closeModal}
         >
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { width: wp(90), height: hp(80) }]}>
+            <View
+              style={[styles.modalContent, { width: wp(90), height: hp(80) }]}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { fontSize: fonts.large }]}>
                   Request Details
@@ -365,99 +387,172 @@ const AdminRequestsScreen: React.FC = () => {
               </View>
 
               {modalLoading ? (
-                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                   <ActivityIndicator size="large" color="#2563EB" />
-                   <Text style={{ marginTop: 10, color: "#666" }}>Loading details...</Text>
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <ActivityIndicator size="large" color="#2563EB" />
+                  <Text style={{ marginTop: 10, color: "#666" }}>
+                    Loading details...
+                  </Text>
                 </View>
               ) : (
                 selectedRequest && (
                   <ScrollView showsVerticalScrollIndicator={false}>
-                    
                     {/* SECTION: REQUEST INFO */}
                     <Text style={styles.sectionHeader}>Pet & Request Info</Text>
                     <View style={styles.infoBox}>
                       <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Pet Name</Text>
-                        <Text style={styles.detailValue}>{selectedRequest.petName}</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedRequest.petName}
+                        </Text>
                       </View>
                       <View style={styles.detailRow}>
-                         <Text style={styles.detailLabel}>Type/Breed</Text>
-                         <Text style={styles.detailValue}>{selectedRequest.petType} / {selectedRequest.breed}</Text>
-                      </View>
-                       <View style={styles.detailRow}>
-                         <Text style={styles.detailLabel}>Dates</Text>
-                         <Text style={styles.detailValue}>{selectedRequest.startDate} to {selectedRequest.endDate}</Text>
+                        <Text style={styles.detailLabel}>Type/Breed</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedRequest.petType} / {selectedRequest.breed}
+                        </Text>
                       </View>
                       <View style={styles.detailRow}>
-                         <Text style={styles.detailLabel}>Location</Text>
-                         <Text style={styles.detailValue}>{selectedRequest.location}</Text>
+                        <Text style={styles.detailLabel}>Dates</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedRequest.startDate} to{" "}
+                          {selectedRequest.endDate}
+                        </Text>
                       </View>
-                       <View style={styles.detailRow}>
-                         <Text style={styles.detailLabel}>Status</Text>
-                         <Text style={[styles.detailValue, {fontWeight: 'bold', color: '#2563EB'}]}>{selectedRequest.status}</Text>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Location</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedRequest.location}
+                        </Text>
                       </View>
-                      <View style={[styles.detailRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }]}>
-                         <Text style={styles.detailLabel}>Notes</Text>
-                         <Text style={[styles.detailValue, {textAlign: 'left', maxWidth: '100%'}]}>
-                            {selectedRequest.behaviorNotes || selectedRequest.messageToVolunteers || "No notes provided."}
-                         </Text>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Status</Text>
+                        <Text
+                          style={[
+                            styles.detailValue,
+                            { fontWeight: "bold", color: "#2563EB" },
+                          ]}
+                        >
+                          {selectedRequest.status}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.detailRow,
+                          {
+                            borderBottomWidth: 0,
+                            flexDirection: "column",
+                            alignItems: "flex-start",
+                            gap: 4,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.detailLabel}>Notes</Text>
+                        <Text
+                          style={[
+                            styles.detailValue,
+                            { textAlign: "left", maxWidth: "100%" },
+                          ]}
+                        >
+                          {selectedRequest.behaviorNotes ||
+                            selectedRequest.messageToVolunteers ||
+                            "No notes provided."}
+                        </Text>
                       </View>
                     </View>
 
                     {/* SECTION: OWNER INFO */}
                     <Text style={styles.sectionHeader}>Owner Details</Text>
-                    <View style={[styles.infoBox, { backgroundColor: '#FFF5EB' }]}>
+                    <View
+                      style={[styles.infoBox, { backgroundColor: "#FFF5EB" }]}
+                    >
                       {ownerDetails ? (
-                         <>
-                           <View style={styles.detailRow}>
-                              <Text style={styles.detailLabel}>Name</Text>
-                              <Text style={styles.detailValue}>{ownerDetails.fullName}</Text>
-                           </View>
-                           <View style={styles.detailRow}>
-                              <Text style={styles.detailLabel}>Email</Text>
-                              <Text style={styles.detailValue}>{ownerDetails.email}</Text>
-                           </View>
-                           <View style={styles.detailRow}>
-                              <Text style={styles.detailLabel}>Phone</Text>
-                              <Text style={styles.detailValue}>{ownerDetails.phone}</Text>
-                           </View>
-                           <View style={[styles.detailRow, {borderBottomWidth:0}]}>
-                              <Text style={styles.detailLabel}>Address</Text>
-                              <Text style={styles.detailValue}>{ownerDetails.address}</Text>
-                           </View>
-                         </>
+                        <>
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Name</Text>
+                            <Text style={styles.detailValue}>
+                              {ownerDetails.fullName}
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Email</Text>
+                            <Text style={styles.detailValue}>
+                              {ownerDetails.email}
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Phone</Text>
+                            <Text style={styles.detailValue}>
+                              {ownerDetails.phone}
+                            </Text>
+                          </View>
+                          <View
+                            style={[styles.detailRow, { borderBottomWidth: 0 }]}
+                          >
+                            <Text style={styles.detailLabel}>Address</Text>
+                            <Text style={styles.detailValue}>
+                              {ownerDetails.address}
+                            </Text>
+                          </View>
+                        </>
                       ) : (
-                        <Text style={{ color: '#999', padding: 10 }}>Owner information not available.</Text>
+                        <Text style={{ color: "#999", padding: 10 }}>
+                          Owner information not available.
+                        </Text>
                       )}
                     </View>
 
                     {/* SECTION: SITTER INFO (If Accepted/Completed) */}
-                    {(selectedRequest.status === "Accepted" || selectedRequest.status === "Completed" ||  selectedRequest.status === "Assigned") && (
+                    {(selectedRequest.status === "Accepted" ||
+                      selectedRequest.status === "Completed" ||
+                      selectedRequest.status === "Assigned") && (
                       <>
                         <Text style={styles.sectionHeader}>Sitter Details</Text>
-                        <View style={[styles.infoBox, { backgroundColor: '#F0F9FF', marginBottom: 20 }]}>
+                        <View
+                          style={[
+                            styles.infoBox,
+                            { backgroundColor: "#F0F9FF", marginBottom: 20 },
+                          ]}
+                        >
                           {sitterDetails ? (
                             <>
                               <View style={styles.detailRow}>
-                                  <Text style={styles.detailLabel}>Name</Text>
-                                  <Text style={styles.detailValue}>{sitterDetails.fullName}</Text>
+                                <Text style={styles.detailLabel}>Name</Text>
+                                <Text style={styles.detailValue}>
+                                  {sitterDetails.fullName}
+                                </Text>
                               </View>
                               <View style={styles.detailRow}>
-                                  <Text style={styles.detailLabel}>Email</Text>
-                                  <Text style={styles.detailValue}>{sitterDetails.email}</Text>
+                                <Text style={styles.detailLabel}>Email</Text>
+                                <Text style={styles.detailValue}>
+                                  {sitterDetails.email}
+                                </Text>
                               </View>
-                              <View style={[styles.detailRow, {borderBottomWidth:0}]}>
-                                  <Text style={styles.detailLabel}>Phone</Text>
-                                  <Text style={styles.detailValue}>{sitterDetails.phone}</Text>
+                              <View
+                                style={[
+                                  styles.detailRow,
+                                  { borderBottomWidth: 0 },
+                                ]}
+                              >
+                                <Text style={styles.detailLabel}>Phone</Text>
+                                <Text style={styles.detailValue}>
+                                  {sitterDetails.phone}
+                                </Text>
                               </View>
                             </>
                           ) : (
-                            <Text style={{ color: '#999', padding: 10 }}>Sitter information not found.</Text>
+                            <Text style={{ color: "#999", padding: 10 }}>
+                              Sitter information not found.
+                            </Text>
                           )}
                         </View>
                       </>
                     )}
-
                   </ScrollView>
                 )
               )}
@@ -468,7 +563,6 @@ const AdminRequestsScreen: React.FC = () => {
             </View>
           </View>
         </Modal>
-
       </SafeAreaView>
     </ImageBackground>
   );

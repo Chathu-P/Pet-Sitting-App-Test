@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  ActivityIndicator,
   ImageBackground,
   Modal,
   TouchableOpacity,
@@ -20,10 +19,17 @@ import {
   useResponsiveFonts,
 } from "../../utils/responsive";
 import { db } from "../../services/firebase";
-import { collection, onSnapshot, query, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { useAdminGuard } from "./useAdminGuard";
 import AdminTabs from "./AdminTabs";
 import AdminHeader from "./AdminHeader";
+import { SkeletonList } from "../../components/SkeletonLoader";
 
 interface AdminUser {
   id: string;
@@ -97,12 +103,14 @@ const AdminUsersScreen: React.FC = () => {
     try {
       const userRef = doc(db, "users", user.id);
       const newStatus = !user.active;
-      
+
       await updateDoc(userRef, {
-        isActive: newStatus
+        isActive: newStatus,
       });
 
-      console.log(`User ${user.name} ${newStatus ? 'unblocked' : 'blocked'} successfully`);
+      console.log(
+        `User ${user.name} ${newStatus ? "unblocked" : "blocked"} successfully`,
+      );
     } catch (error) {
       console.error("Error toggling user status:", error);
       alert("Failed to update user status. Please try again.");
@@ -118,11 +126,18 @@ const AdminUsersScreen: React.FC = () => {
   if (checking || loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        <ImageBackground
+          source={require("../../../assets/admin/adminbg.png")}
+          style={styles.background}
+          resizeMode="cover"
         >
-          <ActivityIndicator size="large" color="#91521B" />
-        </View>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={{ paddingTop: 60 }}
+          >
+            <SkeletonList count={6} type="user" />
+          </ScrollView>
+        </ImageBackground>
       </SafeAreaView>
     );
   }
@@ -158,7 +173,9 @@ const AdminUsersScreen: React.FC = () => {
               </View>
 
               {/* Toggle Buttons */}
-              <View style={[styles.toggleContainer, { marginTop: spacing.nmd }]}>
+              <View
+                style={[styles.toggleContainer, { marginTop: spacing.nmd }]}
+              >
                 <Pressable
                   style={[
                     styles.toggleBtn,
@@ -201,7 +218,10 @@ const AdminUsersScreen: React.FC = () => {
                   </Text>
                 ) : (
                   filteredUsers.map((u) => (
-                    <View key={u.id} style={[styles.userRow, { padding: wp(3) }]}>
+                    <View
+                      key={u.id}
+                      style={[styles.userRow, { padding: wp(3) }]}
+                    >
                       <View style={{ flex: 1 }}>
                         <Text
                           style={[styles.userName, { fontSize: fonts.regular }]}
@@ -237,7 +257,7 @@ const AdminUsersScreen: React.FC = () => {
 
                       {/* Action Buttons */}
                       <View style={{ gap: 8 }}>
-                           {/* View Button */}
+                        {/* View Button */}
                         <Pressable
                           onPress={() => handleViewDetails(u)}
                           style={[
@@ -259,7 +279,7 @@ const AdminUsersScreen: React.FC = () => {
                             View
                           </Text>
                         </Pressable>
-                        
+
                         {/* Block/Unblock Button */}
                         <Pressable
                           onPress={() => handleToggleBlockUser(u)}
@@ -282,7 +302,6 @@ const AdminUsersScreen: React.FC = () => {
                             {u.active ? "Block" : "Unblock"}
                           </Text>
                         </Pressable>
-                    
                       </View>
                     </View>
                   ))
@@ -330,40 +349,43 @@ const AdminUsersScreen: React.FC = () => {
                   </Text>
                 </View>
 
-                 <View style={styles.detailRow}>
+                <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Phone</Text>
                   <Text style={styles.detailValue}>{selectedUser.phone}</Text>
                 </View>
 
-                 <View style={styles.detailRow}>
+                <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Address</Text>
                   <Text style={styles.detailValue}>{selectedUser.address}</Text>
                 </View>
-                
+
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Joined Date</Text>
-                  <Text style={styles.detailValue}>{formatDate(selectedUser.createdAt)}</Text>
+                  <Text style={styles.detailValue}>
+                    {formatDate(selectedUser.createdAt)}
+                  </Text>
                 </View>
-                
+
                 <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.detailLabel}>Status</Text>
                   <View
                     style={[
                       styles.statusBadge,
-                      selectedUser.active ? styles.statusActive : styles.statusInactive,
+                      selectedUser.active
+                        ? styles.statusActive
+                        : styles.statusInactive,
                     ]}
                   >
-                     <Text style={[styles.statusText, {fontSize: 12}]}>
-                        {selectedUser.active ? "Active" : "Inactive"}
-                     </Text>
+                    <Text style={[styles.statusText, { fontSize: 12 }]}>
+                      {selectedUser.active ? "Active" : "Inactive"}
+                    </Text>
                   </View>
                 </View>
-
               </ScrollView>
             )}
-            
+
             <Pressable style={styles.closeBtn} onPress={closeModal}>
-                <Text style={styles.closeBtnText}>Close</Text>
+              <Text style={styles.closeBtnText}>Close</Text>
             </Pressable>
           </View>
         </View>

@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Button from "../components/Button";
@@ -42,6 +43,26 @@ const PetSitterSignupScreen: React.FC = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const logoScaleAnim = React.useRef(new Animated.Value(0.8)).current;
+
+  // Trigger animation on mount
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoScaleAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, logoScaleAnim]);
 
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -78,7 +99,7 @@ const PetSitterSignupScreen: React.FC = () => {
     }
     if (!isStrongPassword(password)) {
       setError(
-        "Password must be at least 8 characters and include a letter and a number."
+        "Password must be at least 8 characters and include a letter and a number.",
       );
       return;
     }
@@ -91,10 +112,10 @@ const PetSitterSignupScreen: React.FC = () => {
       const cred = await createUserWithEmailAndPassword(
         auth,
         email.trim(),
-        password
+        password,
       );
       const uid = cred.user.uid;
-      
+
       // Create basic user document
       await setDoc(doc(db, "users", uid), {
         role: "sitter",
@@ -180,17 +201,19 @@ const PetSitterSignupScreen: React.FC = () => {
           <Header title="Sign Up" marginTop={hp(4)} />
 
           {/* Logo - centered */}
-          <View
+          <Animated.View
             style={[
               styles.centerContainer,
               {
                 minHeight: hp(25),
                 paddingBottom: hp(0.1),
+                opacity: fadeAnim,
+                transform: [{ scale: logoScaleAnim }],
               },
             ]}
           >
             <LogoCircle size={logoSize} />
-          </View>
+          </Animated.View>
 
           {/* As a Pet Sitter Section */}
           <View

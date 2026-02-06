@@ -30,6 +30,7 @@ import Button from "../../components/Button";
 import LogoCircle from "../../components/LogoCircle";
 import TabBar from "../../components/TabBar";
 import NotificationsView from "../../components/Chat-Diary-Notification/NotificationsView";
+import { useNotifications } from "../../context/NotificationContext";
 
 // Utils
 import { COLORS, BORDER_RADIUS, SPACING } from "../../utils/constants";
@@ -44,6 +45,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   const { wp, hp } = useResponsive();
   const spacing = useResponsiveSpacing();
   const fonts = useResponsiveFonts();
+  const { hasUnread } = useNotifications();
 
   // State
   const [userName, setUserName] = useState("User");
@@ -59,7 +61,12 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
 
   const tabs = [
     { key: "Home", label: "Home", icon: "⌂" },
-    { key: "Notifications", label: "Notifications", icon: "◈" },
+    {
+      key: "Notifications",
+      label: "Notifications",
+      icon: "◈",
+      badge: hasUnread,
+    },
   ];
 
   // 1. DATA LISTENER
@@ -84,7 +91,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
 
     const q = query(
       collection(db, "requests"),
-      where("ownerId", "==", currentUser.uid)
+      where("ownerId", "==", currentUser.uid),
     );
 
     const unsubscribe = onSnapshot(
@@ -103,7 +110,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
           return;
         }
         console.error("Snapshot error:", error);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -182,7 +189,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
       };
       return `From ${start.toLocaleDateString(
         "en-US",
-        options
+        options,
       )} to ${end.toLocaleDateString("en-US", options)}`;
     } catch (e) {
       return "Invalid dates";
@@ -192,15 +199,18 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   const renderSkills = (skills: any) => {
     if (!skills) return null;
     const activeSkills = Object.keys(skills).filter((key) => skills[key]);
-    if (activeSkills.length === 0) return <Text style={styles.detailText}>No skills listed.</Text>;
-    
+    if (activeSkills.length === 0)
+      return <Text style={styles.detailText}>No skills listed.</Text>;
+
     return (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {activeSkills.map((skill) => (
           <View key={skill} style={styles.skillBadge}>
-             <Text style={styles.skillText}>
-               {skill.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-             </Text>
+            <Text style={styles.skillText}>
+              {skill
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase())}
+            </Text>
           </View>
         ))}
       </View>
@@ -236,191 +246,209 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
   };
 
   const renderHomeContent = () => (
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header Section */}
-        <ImageBackground
-          source={require("../../../assets/petowner/ownerbg.jpg")}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header Section */}
+      <ImageBackground
+        source={require("../../../assets/petowner/ownerbg.jpg")}
+        style={[
+          styles.headerCard,
+          {
+            marginTop: spacing.xxl,
+            paddingVertical: spacing.xl,
+            paddingHorizontal: wp(5),
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        <View style={styles.headerRow}>
+          <LogoCircle size={50} />
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutBtn}>
+            <Text style={{ color: COLORS.white }}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
+          Welcome Back! 👋
+        </Text>
+        <View style={styles.profileWrap}>
+          <Text
+            style={[
+              styles.nameText,
+              { fontSize: fonts.large, marginTop: spacing.xl },
+            ]}
+          >
+            {userName}
+          </Text>
+          <Text style={styles.emailText}>{userEmail}</Text>
+        </View>
+      </ImageBackground>
+
+      <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
+        <Button
+          title="+ Find a Pet Sitter"
+          variant="secondary"
+          fullWidth
+          onPress={() => navigation.navigate("PetRequestDetails")}
+        />
+
+        {/* Messages and Diary Buttons */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.nmd,
+            marginTop: spacing.nmd,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "#605044f0",
+              paddingVertical: hp(1.8),
+              borderRadius: BORDER_RADIUS.md,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => navigation.navigate("ChatListScreen")}
+          >
+            <Text style={{ fontSize: 18, marginRight: 8 }}>💬</Text>
+            <Text
+              style={{
+                color: COLORS.white,
+                fontWeight: "600",
+                fontSize: fonts.regular,
+              }}
+            >
+              Messages
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "#605044f0",
+              paddingVertical: hp(1.8),
+              borderRadius: BORDER_RADIUS.md,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => navigation.navigate("DiaryScreen")}
+          >
+            <Text style={{ fontSize: 18, marginRight: 8 }}>📖</Text>
+            <Text
+              style={{
+                color: COLORS.white,
+                fontWeight: "600",
+                fontSize: fonts.regular,
+              }}
+            >
+              Diary
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text
           style={[
-            styles.headerCard,
+            styles.sectionTitle,
             {
-              marginTop: spacing.xxl,
-              paddingVertical: spacing.xl,
-              paddingHorizontal: wp(5),
+              fontSize: fonts.large,
+              marginTop: spacing.xl,
+              marginBottom: spacing.sm,
             },
           ]}
         >
-          <LinearGradient
-            colors={["rgba(24, 11, 2, 1)", "rgba(205, 127, 74, 0.28)"]}
-            style={StyleSheet.absoluteFillObject}
-          />
+          My Requests
+        </Text>
 
-          <View style={styles.headerRow}>
-            <LogoCircle size={50} />
-            <TouchableOpacity
-              onPress={handleSignOut}
-              style={styles.signOutBtn}
-            >
-              <Text style={{ color: COLORS.white }}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
-            Welcome Back! 👋
-          </Text>
-          <View style={styles.profileWrap}>
-            <Text
-              style={[
-                styles.nameText,
-                { fontSize: fonts.large, marginTop: spacing.xl },
-              ]}
-            >
-              {userName}
-            </Text>
-            <Text style={styles.emailText}>{userEmail}</Text>
-          </View>
-        </ImageBackground>
-
-        <View style={{ paddingHorizontal: wp(5), marginTop: spacing.xl }}>
-          <Button
-            title="+ Find a Pet Sitter"
-            variant="secondary"
-            fullWidth
-            onPress={() => navigation.navigate("PetRequestDetails")}
-          />
-
-          {/* Messages and Diary Buttons */}
-          <View style={{ flexDirection: "row", gap: spacing.nmd, marginTop: spacing.nmd }}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "#605044f0",
-                paddingVertical: hp(1.8),
-                borderRadius: BORDER_RADIUS.md,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => navigation.navigate("ChatListScreen")}
-            >
-              <Text style={{ fontSize: 18, marginRight: 8 }}>💬</Text>
-              <Text style={{ color: COLORS.white, fontWeight: "600", fontSize: fonts.regular }}>
-                Messages
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "#605044f0",
-                paddingVertical: hp(1.8),
-                borderRadius: BORDER_RADIUS.md,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => navigation.navigate("DiaryScreen")}
-            >
-              <Text style={{ fontSize: 18, marginRight: 8 }}>📖</Text>
-              <Text style={{ color: COLORS.white, fontWeight: "600", fontSize: fonts.regular }}>
-                Diary
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text
+        {requests.map((r) => (
+          <TouchableOpacity
+            key={r.id}
             style={[
-              styles.sectionTitle,
+              styles.requestCard,
               {
-                fontSize: fonts.large,
-                marginTop: spacing.xl,
-                marginBottom: spacing.sm,
+                borderRadius: BORDER_RADIUS.lg,
+                padding: spacing.lg,
+                marginTop: spacing.nmd,
               },
             ]}
+            onPress={() => handleRequestClick(r)}
           >
-            My Requests
-          </Text>
-
-          {requests.map((r) => (
-            <TouchableOpacity
-              key={r.id}
-              style={[
-                styles.requestCard,
-                {
-                  borderRadius: BORDER_RADIUS.lg,
-                  padding: spacing.lg,
-                  marginTop: spacing.nmd,
-                },
-              ]}
-              onPress={() => handleRequestClick(r)}
-            >
-              <View style={styles.requestHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.petName, { fontSize: fonts.large }]}>
-                    {r.petName || "Unnamed Pet"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.breedText,
-                      { fontSize: fonts.regular, textTransform: "capitalize" },
-                    ]}
-                  >
-                    {r.petType || "Pet"}
-                  </Text>
-                </View>
-
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>{r.status || "Open"}</Text>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              {/* PROFESSIONAL DATE SENTENCE */}
-              <View style={styles.infoRow}>
-                <Text style={styles.infoIcon}>🗓️</Text>
-                <Text style={styles.infoText}>
-                  {formatDateSentence(r.startDate, r.endDate)}
+            <View style={styles.requestHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.petName, { fontSize: fonts.large }]}>
+                  {r.petName || "Unnamed Pet"}
+                </Text>
+                <Text
+                  style={[
+                    styles.breedText,
+                    { fontSize: fonts.regular, textTransform: "capitalize" },
+                  ]}
+                >
+                  {r.petType || "Pet"}
                 </Text>
               </View>
 
-              <View style={styles.infoRow}>
-                <Text style={styles.infoIcon}>📍</Text>
-                <Text style={styles.infoText}>
-                  {r.location || "No location set"}
-                </Text>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>{r.status || "Open"}</Text>
               </View>
+            </View>
 
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.badgeBtn}
-                  onPress={() =>
-                    navigation.navigate("GiveBadgeScreen", {
-                      requestId: r.id,
-                      sitterId: r.assignedSitterId || r.sitterId || "N/A",
-                      sitterName: "Sitter",
-                    })
-                  }
-                >
-                  <Text style={styles.badgeBtnText}>🏅 Badge</Text>
-                </TouchableOpacity>
+            <View style={styles.divider} />
 
-                <TouchableOpacity
-                  style={styles.deleteBtn}
-                  onPress={() => handleDeleteRequest(r.id)}
-                >
-                  <Text style={styles.deleteBtnText}>🗑️</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+            {/* PROFESSIONAL DATE SENTENCE */}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoIcon}>🗓️</Text>
+              <Text style={styles.infoText}>
+                {formatDateSentence(r.startDate, r.endDate)}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoIcon}>📍</Text>
+              <Text style={styles.infoText}>
+                {r.location || "No location set"}
+              </Text>
+            </View>
+
+            <View style={styles.cardActions}>
+              <TouchableOpacity
+                style={styles.badgeBtn}
+                onPress={() =>
+                  navigation.navigate("GiveBadgeScreen", {
+                    requestId: r.id,
+                    sitterId: r.assignedSitterId || r.sitterId || "N/A",
+                    sitterName: "Sitter",
+                  })
+                }
+              >
+                <Text style={styles.badgeBtnText}>🏅 Badge</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={() => handleDeleteRequest(r.id)}
+              >
+                <Text style={styles.deleteBtnText}>🗑️</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
       <View style={{ flex: 1 }}>
-        {activeTab === "Home" ? renderHomeContent() : <NotificationsView />}
+        {activeTab === "Home" ? (
+          renderHomeContent()
+        ) : (
+          <NotificationsView onGoBack={() => setActiveTab("Home")} />
+        )}
       </View>
 
       {/* DETAILS MODAL */}
@@ -455,105 +483,162 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                   <Text style={styles.sectionHeader}>Pet Information</Text>
                   <View style={styles.infoBox}>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Name:</Text> {selectedRequest.petName}
+                      <Text style={{ fontWeight: "700" }}>Name:</Text>{" "}
+                      {selectedRequest.petName}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Type:</Text> {selectedRequest.petType}
+                      <Text style={{ fontWeight: "700" }}>Type:</Text>{" "}
+                      {selectedRequest.petType}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Breed:</Text> {selectedRequest.breed}
+                      <Text style={{ fontWeight: "700" }}>Breed:</Text>{" "}
+                      {selectedRequest.breed}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Age:</Text> {selectedRequest.age}
+                      <Text style={{ fontWeight: "700" }}>Age:</Text>{" "}
+                      {selectedRequest.age}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Gender:</Text> {selectedRequest.gender}
+                      <Text style={{ fontWeight: "700" }}>Gender:</Text>{" "}
+                      {selectedRequest.gender}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Size:</Text> {selectedRequest.size}
+                      <Text style={{ fontWeight: "700" }}>Size:</Text>{" "}
+                      {selectedRequest.size}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Temperament:</Text> {selectedRequest.temperament}
+                      <Text style={{ fontWeight: "700" }}>Temperament:</Text>{" "}
+                      {selectedRequest.temperament}
                     </Text>
                   </View>
 
                   <Text style={styles.sectionHeader}>Care Instructions</Text>
                   <View style={styles.infoBox}>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Feeding:</Text> {selectedRequest.feedingSchedule}
+                      <Text style={{ fontWeight: "700" }}>Feeding:</Text>{" "}
+                      {selectedRequest.feedingSchedule}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Walks Required:</Text> {selectedRequest.walkRequirement ? 'Yes' : 'No'}
+                      <Text style={{ fontWeight: "700" }}>Walks Required:</Text>{" "}
+                      {selectedRequest.walkRequirement ? "Yes" : "No"}
                     </Text>
                     {selectedRequest.behaviorNotes ? (
-                        <Text style={[styles.detailText, { marginTop: 4 }]}>
-                          <Text style={{ fontWeight: '700' }}>Behavior Notes:</Text> {selectedRequest.behaviorNotes}
-                        </Text>
+                      <Text style={[styles.detailText, { marginTop: 4 }]}>
+                        <Text style={{ fontWeight: "700" }}>
+                          Behavior Notes:
+                        </Text>{" "}
+                        {selectedRequest.behaviorNotes}
+                      </Text>
                     ) : null}
                     {selectedRequest.messageToVolunteers ? (
-                        <Text style={[styles.detailText, { marginTop: 4 }]}>
-                          <Text style={{ fontWeight: '700' }}>Message:</Text> {selectedRequest.messageToVolunteers}
-                        </Text>
+                      <Text style={[styles.detailText, { marginTop: 4 }]}>
+                        <Text style={{ fontWeight: "700" }}>Message:</Text>{" "}
+                        {selectedRequest.messageToVolunteers}
+                      </Text>
                     ) : null}
                   </View>
 
                   <Text style={styles.sectionHeader}>Location & Emergency</Text>
                   <View style={styles.infoBox}>
-                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Address:</Text> {selectedRequest.address}
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: "700" }}>Address:</Text>{" "}
+                      {selectedRequest.address}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>City:</Text> {selectedRequest.city}
+                      <Text style={{ fontWeight: "700" }}>City:</Text>{" "}
+                      {selectedRequest.city}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Neighborhood:</Text> {selectedRequest.neighborhood}
+                      <Text style={{ fontWeight: "700" }}>Neighborhood:</Text>{" "}
+                      {selectedRequest.neighborhood}
                     </Text>
                     <View style={styles.divider} />
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Emergency Contact:</Text> {selectedRequest.emergencyContactName}
+                      <Text style={{ fontWeight: "700" }}>
+                        Emergency Contact:
+                      </Text>{" "}
+                      {selectedRequest.emergencyContactName}
                     </Text>
-                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Emergency Phone:</Text> {selectedRequest.emergencyPhone}
+                    <Text style={styles.detailText}>
+                      <Text style={{ fontWeight: "700" }}>
+                        Emergency Phone:
+                      </Text>{" "}
+                      {selectedRequest.emergencyPhone}
                     </Text>
                   </View>
 
                   <Text style={styles.sectionHeader}>Schedule</Text>
                   <View style={styles.infoBox}>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>Start:</Text>{" "}
-                      {new Date(selectedRequest.startDate).toLocaleDateString()} {new Date(selectedRequest.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <Text style={{ fontWeight: "700" }}>Start:</Text>{" "}
+                      {new Date(selectedRequest.startDate).toLocaleDateString()}{" "}
+                      {new Date(selectedRequest.startDate).toLocaleTimeString(
+                        [],
+                        { hour: "2-digit", minute: "2-digit" },
+                      )}
                     </Text>
                     <Text style={styles.detailText}>
-                      <Text style={{ fontWeight: '700' }}>End:</Text>{" "}
-                      {new Date(selectedRequest.endDate).toLocaleDateString()} {new Date(selectedRequest.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <Text style={{ fontWeight: "700" }}>End:</Text>{" "}
+                      {new Date(selectedRequest.endDate).toLocaleDateString()}{" "}
+                      {new Date(selectedRequest.endDate).toLocaleTimeString(
+                        [],
+                        { hour: "2-digit", minute: "2-digit" },
+                      )}
                     </Text>
                   </View>
 
                   <Text style={styles.sectionHeader}>Status</Text>
-                  <View style={[styles.infoBox, { alignItems: 'flex-start' }]}>
-                      <View style={[styles.statusBadge, { alignSelf: 'flex-start' }]}>
-                          <Text style={styles.statusText}>{selectedRequest.status}</Text>
-                      </View>
+                  <View style={[styles.infoBox, { alignItems: "flex-start" }]}>
+                    <View
+                      style={[styles.statusBadge, { alignSelf: "flex-start" }]}
+                    >
+                      <Text style={styles.statusText}>
+                        {selectedRequest.status}
+                      </Text>
+                    </View>
                   </View>
 
                   {/* SHOW BADGES AWARDED FOR THIS REQUEST IF ANY */}
-                   {selectedRequest.awardedBadges && selectedRequest.awardedBadges.length > 0 && (
+                  {selectedRequest.awardedBadges &&
+                    selectedRequest.awardedBadges.length > 0 && (
                       <>
                         <Text style={styles.sectionHeader}>Badges Awarded</Text>
                         <View style={styles.infoBox}>
-                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                             {selectedRequest.awardedBadges.map((badge: string) => (
-                               <View key={badge} style={[styles.skillBadge, {backgroundColor: '#FEF3C7'}]}>
-                                 <Text style={[styles.skillText, {color:'#D97706'}]}>
-                                   {badge.replace(/-/g, ' ').replace(/^./, str => str.toUpperCase())}
-                                 </Text>
-                               </View>
-                             ))}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              flexWrap: "wrap",
+                              gap: 6,
+                            }}
+                          >
+                            {selectedRequest.awardedBadges.map(
+                              (badge: string) => (
+                                <View
+                                  key={badge}
+                                  style={[
+                                    styles.skillBadge,
+                                    { backgroundColor: "#FEF3C7" },
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.skillText,
+                                      { color: "#D97706" },
+                                    ]}
+                                  >
+                                    {badge
+                                      .replace(/-/g, " ")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
+                                  </Text>
+                                </View>
+                              ),
+                            )}
                           </View>
                         </View>
                       </>
-                   )}
-
+                    )}
 
                   {sitterDetails && (
                     <>
@@ -561,81 +646,148 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                       <View
                         style={[
                           styles.infoBox,
-                          { backgroundColor: "#F0F9FF", borderColor: "#BAE6FD" },
+                          {
+                            backgroundColor: "#F0F9FF",
+                            borderColor: "#BAE6FD",
+                          },
                         ]}
                       >
-                         <View style={{borderBottomWidth:1, borderBottomColor: '#E0F2FE', paddingBottom: 8, marginBottom: 8}}>
-                             <Text style={[styles.detailText, {fontWeight: '700', color: COLORS.secondary}]}>
-                               {sitterDetails.fullName || sitterDetails.name}
-                             </Text>
-                             <Text style={styles.detailText}>
-                               📧 {sitterDetails.email}
-                             </Text>
-                             <Text style={styles.detailText}>
-                               📞 {sitterDetails.phone || "No phone"}
-                             </Text>
-                         </View>
+                        <View
+                          style={{
+                            borderBottomWidth: 1,
+                            borderBottomColor: "#E0F2FE",
+                            paddingBottom: 8,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.detailText,
+                              { fontWeight: "700", color: COLORS.secondary },
+                            ]}
+                          >
+                            {sitterDetails.fullName || sitterDetails.name}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            📧 {sitterDetails.email}
+                          </Text>
+                          <Text style={styles.detailText}>
+                            📞 {sitterDetails.phone || "No phone"}
+                          </Text>
+                        </View>
 
-                         {/* Availability */}
-                         {sitterDetails.availability && sitterDetails.availability.schedule ? (
-                             <View style={{marginBottom: 8}}>
-                                <Text style={[styles.detailText, {fontWeight:'600'}]}>Availability:</Text>
-                                <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>{sitterDetails.availability.schedule}</Text>
-                             </View>
-                         ) : null}
+                        {/* Availability */}
+                        {sitterDetails.availability &&
+                        sitterDetails.availability.schedule ? (
+                          <View style={{ marginBottom: 8 }}>
+                            <Text
+                              style={[styles.detailText, { fontWeight: "600" }]}
+                            >
+                              Availability:
+                            </Text>
+                            <Text
+                              style={[
+                                styles.detailText,
+                                { color: "#555", fontSize: 13 },
+                              ]}
+                            >
+                              {sitterDetails.availability.schedule}
+                            </Text>
+                          </View>
+                        ) : null}
 
-                         {/* About Me */}
-                         {sitterDetails.aboutMe ? (
-                             <View style={{marginBottom: 8}}>
-                                <Text style={[styles.detailText, {fontWeight:'600'}]}>About:</Text>
-                                <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>{sitterDetails.aboutMe}</Text>
-                             </View>
-                         ) : null}
+                        {/* About Me */}
+                        {sitterDetails.aboutMe ? (
+                          <View style={{ marginBottom: 8 }}>
+                            <Text
+                              style={[styles.detailText, { fontWeight: "600" }]}
+                            >
+                              About:
+                            </Text>
+                            <Text
+                              style={[
+                                styles.detailText,
+                                { color: "#555", fontSize: 13 },
+                              ]}
+                            >
+                              {sitterDetails.aboutMe}
+                            </Text>
+                          </View>
+                        ) : null}
 
-                         {/* Experience */}
-                         {sitterDetails.experience && (
-                            <View style={{marginBottom: 8}}>
-                               {sitterDetails.experience.yearsOfExperience !== undefined && (
-                                   <Text style={[styles.detailText, {fontWeight:'600'}]}>
-                                     Exp: {sitterDetails.experience.yearsOfExperience} Year(s)
-                                   </Text>
-                               )}
-                               {sitterDetails.experience.description ? (
-                                   <Text style={[styles.detailText, {color: '#555', fontSize: 13}]}>
-                                       {sitterDetails.experience.description}
-                                   </Text>
-                               ) : null}
-                            </View>
-                         )}
+                        {/* Experience */}
+                        {sitterDetails.experience && (
+                          <View style={{ marginBottom: 8 }}>
+                            {sitterDetails.experience.yearsOfExperience !==
+                              undefined && (
+                              <Text
+                                style={[
+                                  styles.detailText,
+                                  { fontWeight: "600" },
+                                ]}
+                              >
+                                Exp:{" "}
+                                {sitterDetails.experience.yearsOfExperience}{" "}
+                                Year(s)
+                              </Text>
+                            )}
+                            {sitterDetails.experience.description ? (
+                              <Text
+                                style={[
+                                  styles.detailText,
+                                  { color: "#555", fontSize: 13 },
+                                ]}
+                              >
+                                {sitterDetails.experience.description}
+                              </Text>
+                            ) : null}
+                          </View>
+                        )}
 
-                         {/* Skills */}
-                         {sitterDetails.skills && (
-                            <View>
-                               <Text style={[styles.detailText, {fontWeight:'600', marginBottom: 4}]}>Skills:</Text>
-                               {renderSkills(sitterDetails.skills)}
-                            </View>
-                         )}
+                        {/* Skills */}
+                        {sitterDetails.skills && (
+                          <View>
+                            <Text
+                              style={[
+                                styles.detailText,
+                                { fontWeight: "600", marginBottom: 4 },
+                              ]}
+                            >
+                              Skills:
+                            </Text>
+                            {renderSkills(sitterDetails.skills)}
+                          </View>
+                        )}
                       </View>
                     </>
                   )}
 
                   <TouchableOpacity
                     style={[
-                        styles.editBtn, 
-                        { 
-                            marginTop: 20, 
-                            backgroundColor: selectedRequest.status === 'Completed' ? '#9CA3AF' : COLORS.primary,
-                            opacity: selectedRequest.status === 'Completed' ? 0.7 : 1
-                        }
+                      styles.editBtn,
+                      {
+                        marginTop: 20,
+                        backgroundColor:
+                          selectedRequest.status === "Completed"
+                            ? "#9CA3AF"
+                            : COLORS.primary,
+                        opacity:
+                          selectedRequest.status === "Completed" ? 0.7 : 1,
+                      },
                     ]}
-                    disabled={selectedRequest.status === 'Completed'}
+                    disabled={selectedRequest.status === "Completed"}
                     onPress={() => {
-                        closeModal();
-                        navigation.navigate("PetRequestDetails", { requestId: selectedRequest.id, isEditing: true });
+                      closeModal();
+                      navigation.navigate("PetRequestDetails", {
+                        requestId: selectedRequest.id,
+                        isEditing: true,
+                      });
                     }}
                   >
                     <Text style={styles.editBtnText}>
-                        {selectedRequest.status === 'Completed' ? 'Request Completed' : 'Edit Request'}
+                      {selectedRequest.status === "Completed"
+                        ? "Request Completed"
+                        : "Edit Request"}
                     </Text>
                   </TouchableOpacity>
                 </ScrollView>
@@ -786,27 +938,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   editBtn: {
-      backgroundColor: COLORS.primary,
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: "center",
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
   },
   editBtnText: {
-      color: COLORS.white,
-      fontWeight: '700',
-      fontSize: 16
+    color: COLORS.white,
+    fontWeight: "700",
+    fontSize: 16,
   },
   skillBadge: {
-    backgroundColor: '#E0E7FF',
+    backgroundColor: "#E0E7FF",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   skillText: {
-    color: '#3730A3',
+    color: "#3730A3",
     fontSize: 12,
-    fontWeight: '600'
-  }
+    fontWeight: "600",
+  },
 });
 
 export default PetOwnerDashboardScreen;

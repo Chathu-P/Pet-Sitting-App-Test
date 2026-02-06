@@ -33,7 +33,7 @@ async function deleteUsersCollection() {
     console.log('✓ Users collection deleted successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('Error deleting Users collection:', error);
+   // console.error('Error deleting Users collection:', error);
     process.exit(1);
   }
 }

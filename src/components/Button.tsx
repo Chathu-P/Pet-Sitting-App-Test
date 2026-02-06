@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  Animated,
 } from "react-native";
 import { COLORS, BORDER_RADIUS } from "../utils/constants";
 import {
@@ -38,6 +39,23 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const buttonSizes = useResponsiveButton();
   const fonts = useResponsiveFonts();
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const buttonStyle = [
     styles.button,
@@ -66,26 +84,30 @@ const Button: React.FC<ButtonProps> = ({
   ];
 
   return (
-    <TouchableOpacity
-      style={buttonStyle}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
-    >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === "outline" ? COLORS.primary : COLORS.white}
-        />
-      ) : (
-        <Text
-          style={textStyleCombined}
-          numberOfLines={1}
-          adjustsFontSizeToFit={true}
-        >
-          {title}
-        </Text>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator
+            color={variant === "outline" ? COLORS.primary : COLORS.white}
+          />
+        ) : (
+          <Text
+            style={textStyleCombined}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+          >
+            {title}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

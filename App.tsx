@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { logFirebaseHealth } from "./src/services/firebaseHealth";
+import { NotificationProvider } from "./src/context/NotificationContext";
 
 export default function App() {
   useEffect(() => {
@@ -10,9 +11,11 @@ export default function App() {
   }, []);
 
   return (
-    <>
-      <RootNavigator />
-      <StatusBar style="light" />
-    </>
+    <NotificationProvider>
+      <>
+        <RootNavigator />
+        <StatusBar style="light" />
+      </>
+    </NotificationProvider>
   );
 }

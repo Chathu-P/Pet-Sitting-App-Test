@@ -6,6 +6,7 @@ type TabItem = {
   key: string;
   label: string;
   icon: string;
+  badge?: number | boolean; // Show indicator if truthy
 };
 
 type TabBarProps = {
@@ -24,14 +25,27 @@ const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) => {
           onPress={() => onTabPress(tab.key)}
           activeOpacity={0.7}
         >
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === tab.key && styles.activeTabLabel,
-            ]}
-          >
-            {tab.icon}
-          </Text>
+          <View style={styles.iconWrapper}>
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === tab.key && styles.activeTabLabel,
+              ]}
+            >
+              {tab.icon}
+            </Text>
+            {tab.badge && (
+              <View
+                style={[
+                  styles.notificationDot,
+                  {
+                    borderColor:
+                      activeTab === tab.key ? COLORS.primary : "#999",
+                  },
+                ]}
+              />
+            )}
+          </View>
           <Text
             style={[
               styles.tabText,
@@ -60,12 +74,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconWrapper: {
+    position: "relative",
+    alignItems: "center",
+  },
   tabLabel: {
     fontSize: 20,
     color: "#777",
   },
   activeTabLabel: {
     color: COLORS.primary || "#2f6bed",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: -2,
+    right: -6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FF6B6B",
+    borderWidth: 2,
+    borderColor: "#999",
   },
   tabText: {
     fontSize: 12,
