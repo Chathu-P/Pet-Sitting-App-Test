@@ -232,13 +232,14 @@ const LoginScreen: React.FC = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          keyboardVerticalOffset={0}
         >
           <ScrollView
             style={styles.mainScrollView}
             contentContainerStyle={styles.mainScrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            scrollEnabled={true}
           >
             {/* Login Header */}
             <Animated.View style={{ opacity: fadeAnim }}>
@@ -264,8 +265,8 @@ const LoginScreen: React.FC = () => {
               style={[
                 styles.topQuote,
                 {
-                  marginTop: hp(8),
-                  marginBottom: hp(4),
+                  marginTop: hp(3),
+                  marginBottom: hp(5),
                   paddingHorizontal: wp(5),
                   paddingVertical: spacing.lg,
                   backgroundColor: "rgba(255, 255, 255, 0.85)",
@@ -298,11 +299,12 @@ const LoginScreen: React.FC = () => {
                   marginBottom: 0,
                   borderTopLeftRadius: wp(12),
                   borderTopRightRadius: wp(12),
-                  borderBottomLeftRadius: 0,
-                  borderBottomRightRadius: 0,
+                  borderBottomLeftRadius: wp(12),
+                  borderBottomRightRadius: wp(12),
                   paddingHorizontal: wp(6),
-                  paddingTop: hp(2),
-                  paddingBottom: hp(6),
+                  paddingTop: spacing.lg,
+                  paddingBottom: hp(3),
+                  flexGrow: 1,
                 },
                 {
                   opacity: fadeAnim,

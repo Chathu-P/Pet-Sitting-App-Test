@@ -7,6 +7,8 @@ import {
   ScrollView,
   Pressable,
   ImageBackground,
+  Animated,
+  Easing,
 } from "react-native";
 import {
   collection,
@@ -54,6 +56,35 @@ const BrowseRequestsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sitterProfile, setSitterProfile] = useState<any>(null); // To store sitter's address, skills, etc.
   const [chatLoading, setChatLoading] = useState(false);
+
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(50)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
+
+  // Initial animation on component mount
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // Fetch Sitter Profile for Matching
   React.useEffect(() => {
@@ -310,18 +341,19 @@ const BrowseRequestsScreen: React.FC = () => {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <ScrollView
-          style={styles.scroll}
+        <Animated.ScrollView
+          style={[styles.scroll, { opacity: fadeAnim }]}
           contentContainerStyle={{ paddingTop: hp(4), paddingBottom: hp(4) }}
         >
           {/* Header */}
-          <View
+          <Animated.View
             style={[
               styles.header,
               {
                 paddingHorizontal: wp(5),
                 paddingTop: hp(2),
                 paddingBottom: hp(2),
+                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
               },
             ]}
           >
@@ -335,13 +367,19 @@ const BrowseRequestsScreen: React.FC = () => {
               Browse Requests
             </Text>
             <View style={{ width: 36 }} />
-          </View>
+          </Animated.View>
 
           {/* Tabs */}
-          <View
+          <Animated.View
             style={[
               styles.tabs,
-              { paddingHorizontal: wp(5), marginTop: hp(2), gap: spacing.nmd },
+              {
+                paddingHorizontal: wp(5),
+                marginTop: hp(2),
+                gap: spacing.nmd,
+                transform: [{ translateY: slideAnim }],
+                opacity: fadeAnim,
+              },
             ]}
           >
             <Pressable
@@ -372,10 +410,17 @@ const BrowseRequestsScreen: React.FC = () => {
                 Best Match
               </Text>
             </Pressable>
-          </View>
+          </Animated.View>
 
           {/* Cards */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={{
+              paddingHorizontal: wp(5),
+              marginTop: hp(2),
+              transform: [{ translateY: slideAnim }],
+              opacity: fadeAnim,
+            }}
+          >
             {loading ? (
               <SkeletonList count={4} type="request" />
             ) : requests.length === 0 ? (
@@ -567,8 +612,8 @@ const BrowseRequestsScreen: React.FC = () => {
                   </Pressable>
                 ))
             )}
-          </View>
-        </ScrollView>
+          </Animated.View>
+        </Animated.ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );

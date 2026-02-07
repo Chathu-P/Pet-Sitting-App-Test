@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Animated,
+  Easing,
+  TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
@@ -39,8 +42,53 @@ const SitterProfileScreen: React.FC = () => {
   const [experienceDescription, setExperienceDescription] = useState("");
   const [availability, setAvailability] = useState("");
   const [aboutMe, setAboutMe] = useState("");
-  const [badges, setBadges] = useState<Array<{ name: string; icon: string }>>([]);
+  const [badges, setBadges] = useState<Array<{ name: string; icon: string }>>(
+    [],
+  );
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const buttonPressAnim = useRef(new Animated.Value(1)).current;
+
+  // Initial mount animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const animateButtonPress = () => {
+    Animated.sequence([
+      Animated.timing(buttonPressAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonPressAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const allSkills = [
     "Big Dogs",
@@ -78,7 +126,7 @@ const SitterProfileScreen: React.FC = () => {
         const profileDoc = await getDoc(doc(db, "sitterProfiles", userId));
         if (profileDoc.exists()) {
           const profileData = profileDoc.data();
-          
+
           // Set profile data
           setRating(profileData?.profile?.rating || 0);
           setTotalReviews(profileData?.profile?.totalReviews || 0);
@@ -130,6 +178,7 @@ const SitterProfileScreen: React.FC = () => {
 
   const handleSaveProfile = async () => {
     try {
+      animateButtonPress();
       setSaving(true);
       const userId = auth.currentUser?.uid;
       if (!userId) {
@@ -160,7 +209,7 @@ const SitterProfileScreen: React.FC = () => {
           phone: phone,
           updatedAt: serverTimestamp(),
         },
-        { merge: true }
+        { merge: true },
       );
 
       // Save specific profile info to sitterProfiles collection
@@ -179,7 +228,7 @@ const SitterProfileScreen: React.FC = () => {
           aboutMe: aboutMe,
           updatedAt: serverTimestamp(),
         },
-        { merge: true }
+        { merge: true },
       );
 
       Alert.alert("Success", "Profile updated successfully!");
@@ -194,7 +243,7 @@ const SitterProfileScreen: React.FC = () => {
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
   };
 
@@ -206,9 +255,13 @@ const SitterProfileScreen: React.FC = () => {
           style={styles.backgroundImage}
           resizeMode="cover"
         >
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
             <ActivityIndicator size="large" color="#7C3AED" />
-            <Text style={{ marginTop: 10, color: COLORS.secondary }}>Loading profile...</Text>
+            <Text style={{ marginTop: 10, color: COLORS.secondary }}>
+              Loading profile...
+            </Text>
           </View>
         </ImageBackground>
       </SafeAreaView>
@@ -222,18 +275,28 @@ const SitterProfileScreen: React.FC = () => {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <ScrollView
-          style={styles.scroll}
+        <Animated.ScrollView
+          style={[
+            styles.scroll,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
           contentContainerStyle={{ paddingTop: hp(4), paddingBottom: hp(4) }}
+          scrollEventThrottle={16}
         >
           {/* Header */}
-          <View
+          <Animated.View
             style={[
               styles.header,
               {
                 paddingHorizontal: wp(5),
                 paddingTop: hp(2),
                 paddingBottom: hp(2),
+              },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
               },
             ]}
           >
@@ -247,10 +310,18 @@ const SitterProfileScreen: React.FC = () => {
               Sitter Profile
             </Text>
             <View style={{ width: 36 }} />
-          </View>
+          </Animated.View>
 
           {/* Profile Summary Card */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={[
+              { paddingHorizontal: wp(5), marginTop: hp(2) },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={[styles.card, { padding: wp(4) }]}>
               <View
                 style={{
@@ -260,38 +331,48 @@ const SitterProfileScreen: React.FC = () => {
                 }}
               >
                 <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+                  <Text
+                    style={[
+                      styles.helperText,
+                      { fontSize: fonts.small, marginBottom: 4 },
+                    ]}
+                  >
                     Full Name
                   </Text>
                   <TextInput
                     style={[
                       styles.input,
-                      { 
-                        fontSize: fonts.medium, 
-                        fontWeight: "700", 
-                        paddingVertical: 8, 
+                      {
+                        fontSize: fonts.medium,
+                        fontWeight: "700",
+                        paddingVertical: 8,
                         minHeight: 40,
                         backgroundColor: "#fff",
                         borderWidth: 1,
-                        marginBottom: 8
+                        marginBottom: 8,
                       },
                     ]}
                     value={sitterName}
                     onChangeText={setSitterName}
                     placeholder="Sitter Name"
                   />
-                  
-                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+
+                  <Text
+                    style={[
+                      styles.helperText,
+                      { fontSize: fonts.small, marginBottom: 4 },
+                    ]}
+                  >
                     Phone
                   </Text>
                   <TextInput
                     style={[
                       styles.input,
-                      { 
-                        fontSize: fonts.small, 
-                        paddingVertical: 8, 
+                      {
+                        fontSize: fonts.small,
+                        paddingVertical: 8,
                         minHeight: 40,
-                        marginBottom: 8
+                        marginBottom: 8,
                       },
                     ]}
                     value={phone}
@@ -300,15 +381,20 @@ const SitterProfileScreen: React.FC = () => {
                     keyboardType="phone-pad"
                   />
 
-                  <Text style={[styles.helperText, { fontSize: fonts.small, marginBottom: 4 }]}>
+                  <Text
+                    style={[
+                      styles.helperText,
+                      { fontSize: fonts.small, marginBottom: 4 },
+                    ]}
+                  >
                     Address
                   </Text>
                   <TextInput
                     style={[
                       styles.input,
-                      { 
-                        fontSize: fonts.small, 
-                        paddingVertical: 8, 
+                      {
+                        fontSize: fonts.small,
+                        paddingVertical: 8,
                         minHeight: 40,
                       },
                     ]}
@@ -329,18 +415,29 @@ const SitterProfileScreen: React.FC = () => {
                   </Text>
                 </View>
               </View>
-
-
             </View>
-          </View>
+          </Animated.View>
 
           {/* Experience */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={[
+              { paddingHorizontal: wp(5), marginTop: hp(2) },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={[styles.card, { padding: wp(4) }]}>
               <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
                 Experience
               </Text>
-              <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 6 }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { fontSize: fonts.small, marginTop: 6 },
+                ]}
+              >
                 Years of Experience
               </Text>
               <TextInput
@@ -350,14 +447,21 @@ const SitterProfileScreen: React.FC = () => {
                 ]}
                 placeholder="e.g., 5"
                 placeholderTextColor="#999"
-                value={yearsOfExperience > 0 ? yearsOfExperience.toString() : ""}
+                value={
+                  yearsOfExperience > 0 ? yearsOfExperience.toString() : ""
+                }
                 onChangeText={(text) => {
                   const num = parseInt(text) || 0;
                   setYearsOfExperience(num);
                 }}
                 keyboardType="numeric"
               />
-              <Text style={[styles.helperText, { fontSize: fonts.small, marginTop: 12 }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { fontSize: fonts.small, marginTop: 12 },
+                ]}
+              >
                 Description
               </Text>
               <TextInput
@@ -374,10 +478,18 @@ const SitterProfileScreen: React.FC = () => {
                 textAlignVertical="top"
               />
             </View>
-          </View>
+          </Animated.View>
 
           {/* Skills & Specialties */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={[
+              { paddingHorizontal: wp(5), marginTop: hp(2) },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={[styles.card, { padding: wp(4) }]}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <MaterialIcons name="bolt" size={18} color="#7C3AED" />
@@ -425,10 +537,18 @@ const SitterProfileScreen: React.FC = () => {
                 })}
               </View>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Availability */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={[
+              { paddingHorizontal: wp(5), marginTop: hp(2) },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={[styles.card, { padding: wp(4) }]}>
               <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
                 Availability
@@ -444,10 +564,18 @@ const SitterProfileScreen: React.FC = () => {
                 onChangeText={setAvailability}
               />
             </View>
-          </View>
+          </Animated.View>
 
           {/* About Me */}
-          <View style={{ paddingHorizontal: wp(5), marginTop: hp(2) }}>
+          <Animated.View
+            style={[
+              { paddingHorizontal: wp(5), marginTop: hp(2) },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={[styles.card, { padding: wp(4) }]}>
               <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
                 About Me
@@ -466,34 +594,47 @@ const SitterProfileScreen: React.FC = () => {
                 textAlignVertical="top"
               />
             </View>
-          </View>
+          </Animated.View>
 
           {/* Save Profile */}
-          <View
-            style={{
-              paddingHorizontal: wp(5),
-              marginTop: hp(2),
-              marginBottom: hp(4),
-            }}
+          <Animated.View
+            style={[
+              {
+                paddingHorizontal: wp(5),
+                marginTop: hp(2),
+                marginBottom: hp(4),
+              },
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
           >
-            <Pressable
-              style={[
-                styles.saveBtn,
-                { paddingVertical: hp(1.8), opacity: saving ? 0.6 : 1 },
-              ]}
-              onPress={handleSaveProfile}
-              disabled={saving}
+            <Animated.View
+              style={{
+                transform: [{ scale: buttonPressAnim }],
+              }}
             >
-              {saving ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <Text style={[styles.saveText, { fontSize: fonts.regular }]}>
-                  Save Profile
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        </ScrollView>
+              <TouchableOpacity
+                style={[
+                  styles.saveBtn,
+                  { paddingVertical: hp(1.8), opacity: saving ? 0.6 : 1 },
+                ]}
+                onPress={handleSaveProfile}
+                disabled={saving}
+                activeOpacity={0.7}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Text style={[styles.saveText, { fontSize: fonts.regular }]}>
+                    Save Profile
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </Animated.ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );

@@ -27,13 +27,13 @@ const StepProgressLabel: React.FC<StepProgressLabelProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#5A4A42",
+    backgroundColor: "#E8DCD0",
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
   },
   text: {
-    color: COLORS.white,
+    color: "#6B5D56",
     fontWeight: "600",
     textAlign: "center",
   },

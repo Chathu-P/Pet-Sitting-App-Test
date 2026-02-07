@@ -11,6 +11,9 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Animated,
+  Easing,
+  TouchableOpacity,
 } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -172,6 +175,13 @@ const PetSitterDashboardScreen: React.FC = () => {
   const [availableRequests, setAvailableRequests] = useState<RequestCard[]>([]);
   const [activeJobs, setActiveJobs] = useState(0);
 
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(50)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
+  const badgeSlideAnim = React.useRef(new Animated.Value(100)).current;
+  const buttonPressAnim = React.useRef(new Animated.Value(1)).current;
+
   // Tab configuration
   const tabs = [
     { key: "Home", label: "Home", icon: "⌂" },
@@ -179,7 +189,7 @@ const PetSitterDashboardScreen: React.FC = () => {
       key: "Notifications",
       label: "Notifications",
       icon: "◈",
-      badge: hasUnread,
+      ...(hasUnread ? { badge: true } : {}),
     },
   ];
 
@@ -187,30 +197,81 @@ const PetSitterDashboardScreen: React.FC = () => {
     setActiveTab(tabKey as "Home" | "Notifications");
   };
 
-  // Fetch user data from Firestore
+  // Initial animation on component mount
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          // Fetch basic user info
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
-            setSitterName(data?.fullName || "Sitter");
-            setSitterEmail(data?.email || currentUser.email || "");
-            setSitterAddress(data?.address || "");
-            setSitterPhone(data?.phone || "");
-          }
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-          // Removed badge fetching from here as it now aggregates from requests
+    // Stagger badge animation
+    setTimeout(() => {
+      Animated.timing(badgeSlideAnim, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }, 200);
+  }, []);
+
+  // Button press animation handler
+  const animateButtonPress = () => {
+    Animated.sequence([
+      Animated.timing(buttonPressAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonPressAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Fetch user data from Firestore (Real-time listener)
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setSitterName(data?.fullName || "Sitter");
+          setSitterEmail(data?.email || currentUser.email || "");
+          setSitterAddress(data?.address || "");
+          setSitterPhone(data?.phone || "");
         }
-      } catch (e) {
-        console.error("Error fetching user data:", e);
-      }
-    };
-    fetchUserData();
+      },
+      (error) => {
+        if (error.code !== "permission-denied") {
+          console.error("Error fetching user data:", error);
+        }
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   // Fetch badges from COMPLETED requests
@@ -420,95 +481,107 @@ const PetSitterDashboardScreen: React.FC = () => {
   };
 
   const renderHomeContent = () => (
-    <ScrollView
-      style={styles.scroll}
+    <Animated.ScrollView
+      style={[styles.scroll, { opacity: fadeAnim }]}
       contentContainerStyle={[styles.scrollContent, { paddingTop: hp(4) }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Header with Background Image */}
-      <ImageBackground
-        source={require("../../../assets/petsitter/petsitter.jpg")}
-        style={styles.headerBackground}
-        imageStyle={{
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
+      <Animated.View
+        style={{
+          transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
         }}
       >
-        {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
-        <LinearGradient
-          colors={["rgba(86, 40, 7, 0.56)", "rgba(205, 127, 74, 0.28)"]}
-          start={{ x: 0.5, y: 1 }}
-          end={{ x: 0.5, y: 0 }}
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-        />
-        {/* Top Header: Logo | Sign Out */}
-        <View
-          style={[
-            styles.topHeaderBar,
-            {
-              paddingHorizontal: wp(5),
-              paddingTop: hp(2),
-              paddingBottom: hp(1),
-            },
-          ]}
+        <ImageBackground
+          source={require("../../../assets/petsitter/petsitter.jpg")}
+          style={styles.headerBackground}
+          imageStyle={{
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+          }}
         >
-          <LogoCircle size={60} />
-
-          <Pressable
-            onPress={handleSignOut}
+          {/* Dark brown gradient overlay: bottom (opaque) -> top (transparent) */}
+          <LinearGradient
+            colors={["rgba(86, 40, 7, 0.56)", "rgba(205, 127, 74, 0.28)"]}
+            start={{ x: 0.5, y: 1 }}
+            end={{ x: 0.5, y: 0 }}
+            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+          />
+          {/* Top Header: Logo | Sign Out */}
+          <View
             style={[
-              styles.signOutBtn,
-              { paddingHorizontal: wp(4), paddingVertical: hp(1) },
+              styles.topHeaderBar,
+              {
+                paddingHorizontal: wp(5),
+                paddingTop: hp(2),
+                paddingBottom: hp(1),
+              },
             ]}
           >
-            <Text style={[styles.signOutText, { fontSize: fonts.small }]}>
-              Sign Out
+            <LogoCircle size={60} />
+
+            <Pressable
+              onPress={handleSignOut}
+              style={[
+                styles.signOutBtn,
+                { paddingHorizontal: wp(4), paddingVertical: hp(1) },
+              ]}
+            >
+              <Text style={[styles.signOutText, { fontSize: fonts.small }]}>
+                Sign Out
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Welcome Back Section */}
+          <View
+            style={[
+              styles.headerSection,
+              {
+                paddingHorizontal: wp(5),
+                paddingTop: hp(1),
+                paddingBottom: hp(2),
+                alignItems: "center",
+              },
+            ]}
+          >
+            <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
+              Welcome Back! 👋
             </Text>
-          </Pressable>
-        </View>
 
-        {/* Welcome Back Section */}
-        <View
-          style={[
-            styles.headerSection,
-            {
-              paddingHorizontal: wp(5),
-              paddingTop: hp(1),
-              paddingBottom: hp(2),
-              alignItems: "center",
-            },
-          ]}
-        >
-          <Text style={[styles.greeting, { fontSize: fonts.xxlarge }]}>
-            Welcome Back! 👋
-          </Text>
-
-          {/* Name and Email */}
-          <Text
-            style={[
-              styles.sitterName,
-              { fontSize: fonts.large, marginTop: spacing.nmd },
-            ]}
-          >
-            {sitterName}
-          </Text>
-          <Text
-            style={[
-              styles.sitterEmail,
-              { fontSize: fonts.small, marginTop: spacing.xs },
-            ]}
-          >
-            {sitterEmail}
-          </Text>
-        </View>
-      </ImageBackground>
+            {/* Name and Email */}
+            <Text
+              style={[
+                styles.sitterName,
+                { fontSize: fonts.large, marginTop: spacing.nmd },
+              ]}
+            >
+              {sitterName}
+            </Text>
+            <Text
+              style={[
+                styles.sitterEmail,
+                { fontSize: fonts.small, marginTop: spacing.xs },
+              ]}
+            >
+              {sitterEmail}
+            </Text>
+          </View>
+        </ImageBackground>
+      </Animated.View>
 
       {/* Profile Card */}
-      <View
+      <Animated.View
         style={[
           styles.profileCard,
-          { marginHorizontal: wp(5), marginVertical: hp(2), padding: wp(5) },
+          {
+            marginHorizontal: wp(5),
+            marginVertical: hp(2),
+            padding: wp(5),
+            transform: [{ translateX: slideAnim }],
+            opacity: fadeAnim,
+          },
         ]}
       >
         {/* Avatar + Rating */}
@@ -636,29 +709,37 @@ const PetSitterDashboardScreen: React.FC = () => {
             </Text>
           )}
         </View>
-      </View>
+      </Animated.View>
 
       {/* Action Buttons */}
-      <View
+      <Animated.View
         style={[
           styles.actionButtonsContainer,
-          { paddingHorizontal: wp(5), gap: spacing.nmd },
+          {
+            paddingHorizontal: wp(5),
+            gap: spacing.nmd,
+            transform: [{ translateY: slideAnim }],
+            opacity: fadeAnim,
+          },
         ]}
       >
         <Pressable
           style={[
             styles.browseButton,
-            { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
+            { paddingVertical: hp(1.2), paddingHorizontal: wp(4) },
           ]}
-          onPress={() => navigation.navigate("BrowseRequestsScreen" as never)}
+          onPress={() => {
+            animateButtonPress();
+            navigation.navigate("BrowseRequestsScreen" as never);
+          }}
         >
           <MaterialIcons
             name="search"
-            size={20}
+            size={18}
             color={COLORS.white}
-            style={{ marginRight: spacing.sm }}
+            style={{ marginRight: spacing.xs }}
           />
-          <Text style={[styles.browseButtonText, { fontSize: fonts.regular }]}>
+          <Text style={[styles.browseButtonText, { fontSize: fonts.small }]}>
             Browse Requests
           </Text>
         </Pressable>
@@ -666,47 +747,59 @@ const PetSitterDashboardScreen: React.FC = () => {
         <Pressable
           style={[
             styles.editButton,
-            { paddingVertical: hp(1.8), paddingHorizontal: wp(5) },
+            { paddingVertical: hp(1.2), paddingHorizontal: wp(4) },
           ]}
-          onPress={() => navigation.navigate("SitterProfileScreen" as never)}
+          onPress={() => {
+            animateButtonPress();
+            navigation.navigate("SitterProfileScreen" as never);
+          }}
         >
           <MaterialIcons
             name="edit"
-            size={20}
+            size={18}
             color={COLORS.white}
-            style={{ marginRight: spacing.sm }}
+            style={{ marginRight: spacing.xs }}
           />
-          <Text style={[styles.editButtonText, { fontSize: fonts.regular }]}>
+          <Text style={[styles.editButtonText, { fontSize: fonts.small }]}>
             Edit Profile
           </Text>
         </Pressable>
-      </View>
+      </Animated.View>
 
       {/* Action Buttons Row 2: Messages & Diary */}
-      <View
+      <Animated.View
         style={[
           styles.actionButtonsContainer,
-          { paddingHorizontal: wp(5), gap: spacing.nmd, paddingTop: 0 },
+          {
+            paddingHorizontal: wp(5),
+            gap: spacing.nmd,
+            paddingTop: 0,
+            transform: [{ translateY: slideAnim }],
+            opacity: fadeAnim,
+          },
         ]}
       >
         <Pressable
           style={[
             styles.browseButton,
             {
-              paddingVertical: hp(1.8),
-              paddingHorizontal: wp(5),
+              paddingVertical: hp(1.2),
+              paddingHorizontal: wp(4),
               backgroundColor: "#605044f0",
             },
           ]}
-          onPress={() => navigation.navigate("ChatListScreen" as never)}
+          onPress={() => {
+            animateButtonPress();
+            navigation.navigate("ChatListScreen" as never);
+          }}
         >
           <MaterialIcons
             name="chat"
-            size={20}
+            size={18}
             color={COLORS.white}
-            style={{ marginRight: spacing.sm }}
+            style={{ marginRight: spacing.xs }}
           />
-          <Text style={[styles.browseButtonText, { fontSize: fonts.regular }]}>
+          <Text style={[styles.browseButtonText, { fontSize: fonts.small }]}>
             Messages
           </Text>
         </Pressable>
@@ -715,39 +808,51 @@ const PetSitterDashboardScreen: React.FC = () => {
           style={[
             styles.browseButton,
             {
-              paddingVertical: hp(1.8),
-              paddingHorizontal: wp(5),
+              paddingVertical: hp(1.2),
+              paddingHorizontal: wp(4),
               backgroundColor: "#605044f0",
             },
           ]}
-          onPress={() => navigation.navigate("DiaryScreen" as never)}
+          onPress={() => {
+            animateButtonPress();
+            navigation.navigate("DiaryScreen" as never);
+          }}
         >
           <MaterialIcons
             name="book"
-            size={20}
+            size={18}
             color={COLORS.white}
-            style={{ marginRight: spacing.sm }}
+            style={{ marginRight: spacing.xs }}
           />
-          <Text style={[styles.browseButtonText, { fontSize: fonts.regular }]}>
+          <Text style={[styles.browseButtonText, { fontSize: fonts.small }]}>
             Diary
           </Text>
         </Pressable>
-      </View>
+      </Animated.View>
 
       {/* Accepted Requests Section */}
-      <View
+      <Animated.View
         style={[
           styles.requestsSection,
-          { paddingHorizontal: wp(5), marginTop: hp(3), marginBottom: hp(3) },
+          {
+            paddingHorizontal: wp(5),
+            marginTop: hp(3),
+            marginBottom: hp(3),
+            transform: [{ translateY: badgeSlideAnim }],
+            opacity: fadeAnim,
+          },
         ]}
       >
         <View style={styles.sectionHeader}>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Pressable
-              onPress={() => setRequestType("Accepted")}
+              onPress={() => {
+                animateButtonPress();
+                setRequestType("Accepted");
+              }}
               style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
                 backgroundColor:
                   requestType === "Accepted" ? COLORS.primary : "#F3F4F6",
                 borderRadius: 20,
@@ -757,7 +862,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                 style={{
                   color: requestType === "Accepted" ? "#FFF" : "#666",
                   fontWeight: "600",
-                  fontSize: fonts.medium,
+                  fontSize: fonts.small,
                 }}
               >
                 Accepted
@@ -765,10 +870,13 @@ const PetSitterDashboardScreen: React.FC = () => {
             </Pressable>
 
             <Pressable
-              onPress={() => setRequestType("Completed")}
+              onPress={() => {
+                animateButtonPress();
+                setRequestType("Completed");
+              }}
               style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
                 backgroundColor:
                   requestType === "Completed" ? COLORS.primary : "#F3F4F6",
                 borderRadius: 20,
@@ -778,7 +886,7 @@ const PetSitterDashboardScreen: React.FC = () => {
                 style={{
                   color: requestType === "Completed" ? "#FFF" : "#666",
                   fontWeight: "600",
-                  fontSize: fonts.medium,
+                  fontSize: fonts.small,
                 }}
               >
                 Completed
@@ -869,8 +977,8 @@ const PetSitterDashboardScreen: React.FC = () => {
             </Pressable>
           ))}
         </View>
-      </View>
-    </ScrollView>
+      </Animated.View>
+    </Animated.ScrollView>
   );
 
   return (
@@ -1400,7 +1508,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flex: 1,
-    backgroundColor: "#FF8C42",
+    backgroundColor: "#6B5344",
     borderRadius: BORDER_RADIUS.md,
     flexDirection: "row",
     justifyContent: "center",

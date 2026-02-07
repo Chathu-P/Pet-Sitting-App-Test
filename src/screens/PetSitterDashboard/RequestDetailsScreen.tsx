@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   ImageBackground,
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
+  TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
@@ -34,6 +37,49 @@ const RequestDetailsScreen: React.FC = () => {
   const [owner, setOwner] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const buttonPressAnim = useRef(new Animated.Value(1)).current;
+
+  // Initial mount animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const animateButtonPress = () => {
+    Animated.sequence([
+      Animated.timing(buttonPressAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonPressAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   useEffect(() => {
     if (!requestId) return;
@@ -70,6 +116,7 @@ const RequestDetailsScreen: React.FC = () => {
 
   const handleAccept = async () => {
     try {
+      animateButtonPress();
       setProcessing(true);
       const currentUser = auth.currentUser;
       if (!currentUser) return;
@@ -86,9 +133,9 @@ const RequestDetailsScreen: React.FC = () => {
         await sendNotification(
           request.ownerId,
           "Request Accepted",
-          `Your request for ${request.petName || 'your pet'} has been accepted!`,
+          `Your request for ${request.petName || "your pet"} has been accepted!`,
           "system",
-          requestId
+          requestId,
         );
       }
 
@@ -101,8 +148,6 @@ const RequestDetailsScreen: React.FC = () => {
       setProcessing(false);
     }
   };
-
-
 
   const formatDate = (dateVal: any) => {
     if (!dateVal) return "N/A";
@@ -133,7 +178,15 @@ const RequestDetailsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+          },
+        ]}
+      >
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <MaterialIcons name="arrow-back" size={24} color="#fff" />
         </Pressable>
@@ -141,17 +194,37 @@ const RequestDetailsScreen: React.FC = () => {
           Request Details
         </Text>
         <View style={{ width: 40 }} />
-      </View>
+      </Animated.View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        style={{
+          opacity: fadeAnim,
+        }}
+      >
         {/* Main Card */}
-        <View style={[styles.mainCard, { padding: wp(5) }]}>
+        <Animated.View
+          style={[
+            styles.mainCard,
+            { padding: wp(5) },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}
+        >
           <View style={styles.petHeader}>
             <View style={styles.heartIcon}>
               <MaterialIcons name="favorite-border" size={24} color="#fff" />
             </View>
             <View style={{ flex: 1, marginLeft: 15 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Text style={[styles.petName, { fontSize: fonts.xxlarge }]}>
                   {request.petName}
                 </Text>
@@ -166,7 +239,7 @@ const RequestDetailsScreen: React.FC = () => {
                 {request.breed || request.petType} • {request.age} years old
               </Text>
               <Text style={[styles.petSubtitle, { marginTop: 2 }]}>
-                 {request.gender} • {request.size}
+                {request.gender} • {request.size}
               </Text>
             </View>
           </View>
@@ -177,17 +250,35 @@ const RequestDetailsScreen: React.FC = () => {
                 <Text style={styles.tagText}>{request.temperament}</Text>
               </View>
             )}
-            {request.awardedBadges && Array.isArray(request.awardedBadges) && request.awardedBadges.map((badge: string, idx: number) => (
-               <View key={idx} style={styles.tag}>
+            {request.awardedBadges &&
+              Array.isArray(request.awardedBadges) &&
+              request.awardedBadges.map((badge: string, idx: number) => (
+                <View key={idx} style={styles.tag}>
                   <Text style={styles.tagText}>{badge}</Text>
-               </View>
-            ))}
+                </View>
+              ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Why this is a great match */}
-        <View style={[styles.sectionCard, styles.purpleCard, { marginHorizontal: wp(5), marginTop: 20 }]}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+        <Animated.View
+          style={[
+            styles.sectionCard,
+            styles.purpleCard,
+            { marginHorizontal: wp(5), marginTop: 20 },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
             <MaterialIcons name="auto-awesome" size={20} color="#9333EA" />
             <Text style={[styles.purpleTitle, { fontSize: fonts.medium }]}>
               Why this is a great match
@@ -195,157 +286,236 @@ const RequestDetailsScreen: React.FC = () => {
           </View>
           <View style={styles.checkItem}>
             <MaterialIcons name="check" size={18} color="#16A34A" />
-            <Text style={styles.checkText}>Your availability matches perfectly</Text>
+            <Text style={styles.checkText}>
+              Your availability matches perfectly
+            </Text>
           </View>
           <View style={styles.checkItem}>
             <MaterialIcons name="check" size={18} color="#16A34A" />
             <Text style={styles.checkText}>Location is convenient for you</Text>
           </View>
           {request.walkRequirement && (
-             <View style={styles.checkItem}>
-             <MaterialIcons name="check" size={18} color="#16A34A" />
-             <Text style={styles.checkText}>You can handle walk requirements</Text>
-           </View>
+            <View style={styles.checkItem}>
+              <MaterialIcons name="check" size={18} color="#16A34A" />
+              <Text style={styles.checkText}>
+                You can handle walk requirements
+              </Text>
+            </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Schedule & Location */}
-        <View style={[styles.sectionCard, { marginHorizontal: wp(5), marginTop: 20 }]}>
+        <Animated.View
+          style={[
+            styles.sectionCard,
+            { marginHorizontal: wp(5), marginTop: 20 },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
           <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
             Schedule & Location
           </Text>
-          
+
           <View style={styles.infoRow}>
-             <View style={styles.iconBox}>
-                <MaterialIcons name="date-range" size={20} color="#9333EA" />
-             </View>
-             <View>
-                <Text style={styles.infoLabel}>
-                   {formatDate(request.startDate)} to {formatDate(request.endDate)}
-                </Text>
-                {/* Calculate duration if needed */}
-             </View>
+            <View style={styles.iconBox}>
+              <MaterialIcons name="date-range" size={20} color="#9333EA" />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>
+                {formatDate(request.startDate)} to {formatDate(request.endDate)}
+              </Text>
+              {/* Calculate duration if needed */}
+            </View>
           </View>
 
           <View style={styles.infoRow}>
-             <View style={styles.iconBox}>
-                <MaterialIcons name="location-on" size={20} color="#9333EA" />
-             </View>
-             <View>
-                <Text style={styles.infoLabel}>{request.city || request.location}</Text>
-                <Text style={styles.infoSub}>{request.address}</Text>
-                {request.neighborhood && (
-                   <Text style={[styles.infoSub, { fontStyle: 'italic', marginTop: 2 }]}>
-                      Neighborhood: {request.neighborhood}
-                   </Text>
-                )}
-             </View>
+            <View style={styles.iconBox}>
+              <MaterialIcons name="location-on" size={20} color="#9333EA" />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>
+                {request.city || request.location}
+              </Text>
+              <Text style={styles.infoSub}>{request.address}</Text>
+              {request.neighborhood && (
+                <Text
+                  style={[
+                    styles.infoSub,
+                    { fontStyle: "italic", marginTop: 2 },
+                  ]}
+                >
+                  Neighborhood: {request.neighborhood}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Owner Information */}
-        <View style={[styles.sectionCard, { marginHorizontal: wp(5), marginTop: 20 }]}>
+        <Animated.View
+          style={[
+            styles.sectionCard,
+            { marginHorizontal: wp(5), marginTop: 20 },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
           <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
             Owner Information
           </Text>
           <View style={styles.infoRow}>
-             <MaterialIcons name="person" size={22} color="#9333EA" />
-             <View style={{ marginLeft: 10 }}>
-                <Text style={styles.infoLabel}>{owner ? owner.fullName : "Pet Owner"}</Text>
-                {owner?.email && <Text style={styles.infoSub}>{owner.email}</Text>}
-             </View>
+            <MaterialIcons name="person" size={22} color="#9333EA" />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.infoLabel}>
+                {owner ? owner.fullName : "Pet Owner"}
+              </Text>
+              {owner?.email && (
+                <Text style={styles.infoSub}>{owner.email}</Text>
+              )}
+            </View>
           </View>
 
           {owner?.phone && (
-             <View style={styles.infoRow}>
-                <MaterialIcons name="phone" size={22} color="#9333EA" />
-                <Text style={[styles.infoLabel, { marginLeft: 10 }]}>{owner.phone}</Text>
-             </View>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="phone" size={22} color="#9333EA" />
+              <Text style={[styles.infoLabel, { marginLeft: 10 }]}>
+                {owner.phone}
+              </Text>
+            </View>
           )}
 
-           {owner?.address && (
-              <View style={styles.infoRow}>
-                 <MaterialIcons name="home" size={22} color="#9333EA" />
-                 <Text style={[styles.infoLabel, { marginLeft: 10 }]}>{owner.address}</Text>
+          {owner?.address && (
+            <View style={styles.infoRow}>
+              <MaterialIcons name="home" size={22} color="#9333EA" />
+              <Text style={[styles.infoLabel, { marginLeft: 10 }]}>
+                {owner.address}
+              </Text>
+            </View>
+          )}
+
+          {/* Emergency Contact */}
+          <View
+            style={[
+              styles.divider,
+              { marginVertical: 10, height: 1, backgroundColor: "#eee" },
+            ]}
+          />
+          <Text
+            style={[
+              styles.sectionTitle,
+              { fontSize: fonts.small, marginBottom: 10, color: "#666" },
+            ]}
+          >
+            Emergency Contact
+          </Text>
+
+          {request.emergencyContactName && (
+            <View style={styles.infoRow}>
+              <MaterialIcons name="contact-phone" size={22} color="#EF4444" />
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.infoLabel}>
+                  {request.emergencyContactName}
+                </Text>
+                <Text style={styles.infoSub}>{request.emergencyPhone}</Text>
               </View>
-           )}
-
-           {/* Emergency Contact */}
-           <View style={[styles.divider, { marginVertical: 10, height: 1, backgroundColor: '#eee' }]} />
-           <Text style={[styles.sectionTitle, { fontSize: fonts.small, marginBottom: 10, color: '#666' }]}>
-               Emergency Contact
-           </Text>
-
-           {request.emergencyContactName && (
-             <View style={styles.infoRow}>
-                <MaterialIcons name="contact-phone" size={22} color="#EF4444" />
-                <View style={{ marginLeft: 10 }}>
-                   <Text style={styles.infoLabel}>{request.emergencyContactName}</Text>
-                   <Text style={styles.infoSub}>{request.emergencyPhone}</Text>
-                </View>
-             </View>
-           )}
-        </View>
+            </View>
+          )}
+        </Animated.View>
 
         {/* Care Requirements */}
-        <View style={[styles.sectionCard, { marginHorizontal: wp(5), marginTop: 20 }]}>
-           <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
+        <Animated.View
+          style={[
+            styles.sectionCard,
+            { marginHorizontal: wp(5), marginTop: 20 },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
             Care Requirements
           </Text>
-          
+
           <View style={styles.careItem}>
-             <MaterialIcons name="schedule" size={20} color="#9333EA" />
-             <View style={{ marginLeft: 10 }}>
-                <Text style={styles.careTitle}>Feeding Schedule</Text>
-                <Text style={styles.careDesc}>{request.feedingSchedule}</Text>
-             </View>
+            <MaterialIcons name="schedule" size={20} color="#9333EA" />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.careTitle}>Feeding Schedule</Text>
+              <Text style={styles.careDesc}>{request.feedingSchedule}</Text>
+            </View>
           </View>
 
           <View style={styles.careItem}>
-             <MaterialIcons name="pets" size={20} color="#9333EA" />
-             <View style={{ marginLeft: 10 }}>
-                <Text style={styles.careTitle}>Diet Type</Text>
-                <Text style={styles.careDesc}>See details</Text>
-             </View>
+            <MaterialIcons name="pets" size={20} color="#9333EA" />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.careTitle}>Diet Type</Text>
+              <Text style={styles.careDesc}>See details</Text>
+            </View>
           </View>
 
           {request.walkRequirement && (
-             <View style={styles.careItem}>
-                <MaterialIcons name="directions-walk" size={20} color="#9333EA" />
-                <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.careTitle}>Walks</Text>
-                    <Text style={styles.careDesc}>Walks required</Text>
-                </View>
-             </View>
+            <View style={styles.careItem}>
+              <MaterialIcons name="directions-walk" size={20} color="#9333EA" />
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.careTitle}>Walks</Text>
+                <Text style={styles.careDesc}>Walks required</Text>
+              </View>
+            </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Special Instructions */}
-        <View style={[styles.sectionCard, { marginHorizontal: wp(5), marginTop: 20 }]}>
-           <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
+        <Animated.View
+          style={[
+            styles.sectionCard,
+            { marginHorizontal: wp(5), marginTop: 20 },
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { fontSize: fonts.medium }]}>
             Special Instructions
           </Text>
           <Text style={styles.descText}>
-             {request.behaviorNotes || request.messageToVolunteers || "No special instructions provided."}
+            {request.behaviorNotes ||
+              request.messageToVolunteers ||
+              "No special instructions provided."}
           </Text>
-        </View>
-
-      </ScrollView>
+        </Animated.View>
+      </Animated.ScrollView>
 
       {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
-         <Pressable style={styles.acceptBtn} onPress={handleAccept} disabled={processing}>
-             {processing ? (
-                <ActivityIndicator color="#fff" />
-             ) : (
-                <>
-                  <MaterialIcons name="check" size={20} color="#fff" />
-                  <Text style={styles.acceptText}>Accept Request</Text>
-                </>
-             )}
-         </Pressable>
+        <Animated.View
+          style={{
+            flex: 1,
+            transform: [{ scale: buttonPressAnim }],
+          }}
+        >
+          <TouchableOpacity
+            style={styles.acceptBtn}
+            onPress={handleAccept}
+            disabled={processing}
+            activeOpacity={0.7}
+          >
+            {processing ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <MaterialIcons name="check" size={20} color="#fff" />
+                <Text style={styles.acceptText}>Accept Request</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
-
     </SafeAreaView>
   );
 };
@@ -366,164 +536,166 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   backBtn: {
-     padding: 5,
+    padding: 5,
   },
   mainCard: {
-     backgroundColor: "#3E2C22", // Dark card background
-     margin: 20,
-     borderRadius: 20,
-     marginTop: 20,
+    backgroundColor: "#3E2C22", // Dark card background
+    margin: 20,
+    borderRadius: 20,
+    marginTop: 20,
   },
   petHeader: {
-     flexDirection: "row",
+    flexDirection: "row",
   },
   heartIcon: {
-     width: 50, height: 50,
-     borderRadius: 25,
-     borderWidth: 1,
-     borderColor: "rgba(255,255,255,0.3)",
-     justifyContent: "center",
-     alignItems: "center",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   petName: {
-     color: "#fff",
-     fontWeight: "bold",
+    color: "#fff",
+    fontWeight: "bold",
   },
   petSubtitle: {
-     color: "rgba(255,255,255,0.7)",
-     marginTop: 4,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 4,
   },
   matchBadge: {
-     backgroundColor: "#5D4E44",
-     borderRadius: 12,
-     flexDirection: "row",
-     alignItems: "center",
-     paddingHorizontal: 8,
-     paddingVertical: 4,
+    backgroundColor: "#5D4E44",
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   matchText: {
-     color: "#fff",
-     fontWeight: "bold",
-     fontSize: 12,
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
   },
   tagsRow: {
-     flexDirection: "row",
-     marginTop: 15,
-     gap: 10,
+    flexDirection: "row",
+    marginTop: 15,
+    gap: 10,
   },
   tag: {
-     backgroundColor: "rgba(255,255,255,0.15)",
-     paddingHorizontal: 12,
-     paddingVertical: 6,
-     borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
   },
   tagText: {
-     color: "#fff",
-     fontSize: 12,
+    color: "#fff",
+    fontSize: 12,
   },
   sectionCard: {
-     backgroundColor: "#fff",
-     borderRadius: 16,
-     padding: 20,
-     marginBottom: 0,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 0,
   },
   purpleCard: {
-      backgroundColor: "#FBF5FF",
+    backgroundColor: "#FBF5FF",
   },
   purpleTitle: {
-      color: "#9333EA",
-      fontWeight: "700",
-      marginLeft: 8,
+    color: "#9333EA",
+    fontWeight: "700",
+    marginLeft: 8,
   },
   checkItem: {
-      flexDirection: "row",
-      marginTop: 8,
-      alignItems: "center",
+    flexDirection: "row",
+    marginTop: 8,
+    alignItems: "center",
   },
   checkText: {
-      color: "#9333EA",
-      marginLeft: 8,
-      fontSize: 13,
+    color: "#9333EA",
+    marginLeft: 8,
+    fontSize: 13,
   },
   sectionTitle: {
-      color: "#1F2937", // Gray 900
-      fontWeight: "700",
-      marginBottom: 15,
+    color: "#1F2937", // Gray 900
+    fontWeight: "700",
+    marginBottom: 15,
   },
   infoRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
   },
   iconBox: {
-      width: 36, height: 36,
-      backgroundColor: "#F3E8FF",
-      borderRadius: 10,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 12,
+    width: 36,
+    height: 36,
+    backgroundColor: "#F3E8FF",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   infoLabel: {
-      color: "#374151",
-      fontWeight: "600",
-      fontSize: 14,
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 14,
   },
   infoSub: {
-      color: "#6B7280",
-      fontSize: 12,
-      marginTop: 2,
+    color: "#6B7280",
+    fontSize: 12,
+    marginTop: 2,
   },
   careItem: {
-      flexDirection: "row",
-      marginBottom: 15,
+    flexDirection: "row",
+    marginBottom: 15,
   },
   careTitle: {
-      color: "#374151",
-      fontWeight: "600",
-      fontSize: 14,
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 14,
   },
   careDesc: {
-      color: "#6B7280",
-      fontSize: 12,
-      marginTop: 2,
+    color: "#6B7280",
+    fontSize: 12,
+    marginTop: 2,
   },
   descText: {
-     color: "#4B5563",
-     lineHeight: 20,
+    color: "#4B5563",
+    lineHeight: 20,
   },
   bottomBar: {
-     position: "absolute",
-     bottom: 0,
-     left: 0,
-     right: 0,
-     backgroundColor: "#fff",
-     padding: 20,
-     flexDirection: "row",
-     justifyContent: "center",
-     borderTopLeftRadius: 20,
-     borderTopRightRadius: 20,
-     shadowColor: "#000",
-     shadowOffset: { width: 0, height: -2 },
-     shadowOpacity: 0.1,
-     shadowRadius: 10,
-     elevation: 5,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "center",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   acceptBtn: {
-     flex: 1,
-     backgroundColor: "#F4EAFF", // Purple accent
-     borderRadius: 12,
-     height: 50,
-     justifyContent: "center",
-     alignItems: "center",
-     flexDirection: "row",
+    flex: 1,
+    backgroundColor: "#F4EAFF", // Purple accent
+    borderRadius: 12,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
   },
   acceptText: {
-     color: "#9333EA",
-     fontWeight: "600",
-     marginLeft: 8,
+    color: "#9333EA",
+    fontWeight: "600",
+    marginLeft: 8,
   },
   divider: {
-       width: '100%',
+    width: "100%",
   },
 });
 

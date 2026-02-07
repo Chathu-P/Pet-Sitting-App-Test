@@ -49,7 +49,7 @@ const SignupScreen: React.FC = () => {
 
   return (
     <ImageBackground
-      source={require("../../assets/signup/signup.jpg")}
+      source={require("../../assets/login/Group 74.png")}
       style={styles.background}
       resizeMode="cover"
     >

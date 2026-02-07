@@ -65,7 +65,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
       key: "Notifications",
       label: "Notifications",
       icon: "◈",
-      badge: hasUnread,
+      ...(hasUnread ? { badge: true } : {}),
     },
   ];
 
@@ -306,20 +306,20 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             style={{
               flex: 1,
               backgroundColor: "#605044f0",
-              paddingVertical: hp(1.8),
-              borderRadius: BORDER_RADIUS.md,
+              paddingVertical: hp(1.1),
+              borderRadius: 10,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
             }}
             onPress={() => navigation.navigate("ChatListScreen")}
           >
-            <Text style={{ fontSize: 18, marginRight: 8 }}>💬</Text>
+            <Text style={{ fontSize: 16, marginRight: 6 }}>💬</Text>
             <Text
               style={{
                 color: COLORS.white,
                 fontWeight: "600",
-                fontSize: fonts.regular,
+                fontSize: fonts.small,
               }}
             >
               Messages
@@ -330,20 +330,20 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             style={{
               flex: 1,
               backgroundColor: "#605044f0",
-              paddingVertical: hp(1.8),
-              borderRadius: BORDER_RADIUS.md,
+              paddingVertical: hp(1.1),
+              borderRadius: 10,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
             }}
             onPress={() => navigation.navigate("DiaryScreen")}
           >
-            <Text style={{ fontSize: 18, marginRight: 8 }}>📖</Text>
+            <Text style={{ fontSize: 16, marginRight: 6 }}>📖</Text>
             <Text
               style={{
                 color: COLORS.white,
                 fontWeight: "600",
-                fontSize: fonts.regular,
+                fontSize: fonts.small,
               }}
             >
               Diary
@@ -370,9 +370,9 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
             style={[
               styles.requestCard,
               {
-                borderRadius: BORDER_RADIUS.lg,
-                padding: spacing.lg,
-                marginTop: spacing.nmd,
+                borderRadius: 10,
+                padding: spacing.sm,
+                marginTop: spacing.xs,
               },
             ]}
             onPress={() => handleRequestClick(r)}
@@ -617,13 +617,13 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                                   key={badge}
                                   style={[
                                     styles.skillBadge,
-                                    { backgroundColor: "#FEF3C7" },
+                                    { backgroundColor: "#FFE5D6" },
                                   ]}
                                 >
                                   <Text
                                     style={[
                                       styles.skillText,
-                                      { color: "#D97706" },
+                                      { color: "#8B5A2B" },
                                     ]}
                                   >
                                     {badge
@@ -647,15 +647,15 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                         style={[
                           styles.infoBox,
                           {
-                            backgroundColor: "#F0F9FF",
-                            borderColor: "#BAE6FD",
+                            backgroundColor: "#FDF6F1",
+                            borderColor: "#E8DCCC",
                           },
                         ]}
                       >
                         <View
                           style={{
                             borderBottomWidth: 1,
-                            borderBottomColor: "#E0F2FE",
+                            borderBottomColor: "#E8DCCC",
                             paddingBottom: 8,
                             marginBottom: 8,
                           }}
@@ -663,7 +663,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                           <Text
                             style={[
                               styles.detailText,
-                              { fontWeight: "700", color: COLORS.secondary },
+                              { fontWeight: "700", color: "#6B5D56" },
                             ]}
                           >
                             {sitterDetails.fullName || sitterDetails.name}
@@ -688,7 +688,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                             <Text
                               style={[
                                 styles.detailText,
-                                { color: "#555", fontSize: 13 },
+                                { color: "#6B5D56", fontSize: 12 },
                               ]}
                             >
                               {sitterDetails.availability.schedule}
@@ -707,7 +707,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                             <Text
                               style={[
                                 styles.detailText,
-                                { color: "#555", fontSize: 13 },
+                                { color: "#6B5D56", fontSize: 12 },
                               ]}
                             >
                               {sitterDetails.aboutMe}
@@ -735,7 +735,7 @@ const PetOwnerDashboardScreen: React.FC = ({ navigation }: any) => {
                               <Text
                                 style={[
                                   styles.detailText,
-                                  { color: "#555", fontSize: 13 },
+                                  { color: "#6B5D56", fontSize: 12 },
                                 ]}
                               >
                                 {sitterDetails.experience.description}
@@ -813,11 +813,20 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   greeting: {
     color: COLORS.white,
-    fontWeight: "700",
+    fontWeight: "800",
     textAlign: "center",
+    letterSpacing: -0.5,
   },
   container: { flex: 1 },
-  headerCard: { overflow: "hidden", borderRadius: BORDER_RADIUS.md },
+  headerCard: {
+    overflow: "hidden",
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -826,138 +835,227 @@ const styles = StyleSheet.create({
   signOutBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
   },
   profileWrap: { alignItems: "center" },
-  nameText: { color: COLORS.white, fontWeight: "700" },
-  emailText: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  sectionTitle: { color: COLORS.text, fontWeight: "700" },
+  nameText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  emailText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  sectionTitle: {
+    color: "#3C3C3C",
+    fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: -0.1,
+  },
   requestCard: {
-    backgroundColor: COLORS.white,
-    borderLeftWidth: 5,
+    backgroundColor: "#FFFFFF",
+    borderLeftWidth: 4,
     borderLeftColor: COLORS.primary,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#E8DCCC",
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
     shadowRadius: 4,
+    justifyContent: "space-between",
   },
   requestHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+    marginBottom: 2,
   },
-  petName: { color: COLORS.text, fontWeight: "700" },
-  breedText: { color: COLORS.textLight, marginTop: 2 },
+  petName: {
+    color: "#2C2C2C",
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: -0.1,
+  },
+  breedText: {
+    color: "#9B8B7E",
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "500",
+  },
   statusBadge: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: "#FFE5D6",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    elevation: 1,
+    shadowColor: "#CD7F4A",
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
   },
-  statusText: { color: COLORS.white, fontWeight: "700", fontSize: 12 },
-  divider: { height: 1, backgroundColor: "#F0F0F0", marginVertical: 12 },
-  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  infoIcon: { fontSize: 14, marginRight: 8 },
-  infoText: { color: COLORS.textLight, fontSize: 13 },
+  statusText: {
+    color: "#8B5A2B",
+    fontWeight: "800",
+    fontSize: 10,
+    letterSpacing: 0.1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E8DCCC",
+    marginVertical: 8,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  infoIcon: {
+    fontSize: 14,
+    marginRight: 8,
+    opacity: 0.8,
+  },
+  infoText: {
+    color: "#6B5D56",
+    fontSize: 12,
+    fontWeight: "500",
+  },
   cardActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 12,
-    gap: 10,
+    marginTop: 10,
+    gap: 8,
     alignItems: "center",
   },
   badgeBtn: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: "rgba(205, 127, 74, 0.05)",
+  },
+  badgeBtnText: {
+    color: COLORS.primary,
+    fontWeight: "700",
+    fontSize: 11,
+    letterSpacing: 0.1,
+  },
+  deleteBtn: {
+    backgroundColor: "#FFE8E8",
+    padding: 6,
+    borderRadius: 6,
+    elevation: 1,
+    shadowColor: "#FF6B6B",
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  deleteBtnText: {
+    color: "#FF6B6B",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  closeBtn: {
+    marginTop: 18,
+    backgroundColor: "#F5F0E8",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8DCCC",
+  },
+  closeBtnText: {
+    color: "#6B5D56",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.2,
+  },
+  editBtn: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  editBtnText: {
+    color: COLORS.white,
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.2,
+  },
+  skillBadge: {
+    backgroundColor: "#FFE5D6",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
   },
-  badgeBtnText: { color: COLORS.primary, fontWeight: "600", fontSize: 12 },
-  deleteBtn: { backgroundColor: "#FFE8E8", padding: 8, borderRadius: 8 },
-  deleteBtnText: { color: "#FF6B6B", fontSize: 16 },
-
-  // Modal Styles
+  skillText: {
+    color: "#8B5A2B",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: "#FEFDFB",
+    borderRadius: 16,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "#E8DCCC",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
-    paddingBottom: 10,
+    borderBottomColor: "#E8DCCC",
+    paddingBottom: 12,
   },
   modalTitle: {
-    fontWeight: "700",
-    color: COLORS.secondary,
+    fontWeight: "800",
+    color: "#6B5D56",
+    letterSpacing: 0.2,
   },
   sectionHeader: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#888",
-    marginTop: 10,
-    marginBottom: 5,
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#8B7355",
+    marginTop: 12,
+    marginBottom: 8,
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoBox: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
+    backgroundColor: "#F9F6F2",
+    borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E8DCCC",
     marginBottom: 10,
   },
   detailText: {
-    color: "#374151",
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  closeBtn: {
-    marginTop: 15,
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  closeBtnText: {
-    color: "#374151",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  editBtn: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  editBtnText: {
-    color: COLORS.white,
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  skillBadge: {
-    backgroundColor: "#E0E7FF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  skillText: {
-    color: "#3730A3",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#3C3C3C",
+    fontSize: 13,
+    marginBottom: 5,
+    lineHeight: 18,
   },
 });
 

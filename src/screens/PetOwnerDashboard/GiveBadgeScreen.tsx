@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
   ActivityIndicator,
-  Platform
+  Platform,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
@@ -124,13 +124,13 @@ const BADGES = [
 const GiveBadgeScreen = ({ navigation }: any) => {
   const route = useRoute();
   const { sitterId, requestId } = (route.params as any) || {};
-  
+
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleBadge = (id: string) => {
     if (selectedBadges.includes(id)) {
-      setSelectedBadges(selectedBadges.filter(b => b !== id));
+      setSelectedBadges(selectedBadges.filter((b) => b !== id));
     } else {
       setSelectedBadges([...selectedBadges, id]);
     }
@@ -153,7 +153,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
         const requestRef = doc(db, "requests", requestId);
         await updateDoc(requestRef, {
           // status: "Completed", // Removed as per user request
-          awardedBadges: selectedBadges
+          awardedBadges: selectedBadges,
         });
       }
 
@@ -161,13 +161,12 @@ const GiveBadgeScreen = ({ navigation }: any) => {
       if (sitterId && sitterId !== "N/A") {
         const sitterRef = doc(db, "users", sitterId);
         await updateDoc(sitterRef, {
-          badges: arrayUnion(...selectedBadges)
+          badges: arrayUnion(...selectedBadges),
         });
       }
 
       alert("Success! Badges awarded.");
       navigation.navigate("PetOwnerDashboardScreen"); //
-
     } catch (error: any) {
       console.error("Firebase Error:", error);
       alert("Error: " + error.message);
@@ -180,8 +179,8 @@ const GiveBadgeScreen = ({ navigation }: any) => {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
           <Text style={styles.headerText}>← Back</Text>
@@ -198,13 +197,12 @@ const GiveBadgeScreen = ({ navigation }: any) => {
                 key={badge.id}
                 onPress={() => toggleBadge(badge.id)}
                 activeOpacity={0.7}
-                style={[
-                  styles.badgeCard,
-                  isSelected && styles.selectedCard
-                ]}
+                style={[styles.badgeCard, isSelected && styles.selectedCard]}
               >
                 <Text style={styles.icon}>{badge.icon}</Text>
-                <Text style={[styles.label, isSelected && styles.selectedLabel]}>
+                <Text
+                  style={[styles.label, isSelected && styles.selectedLabel]}
+                >
                   {badge.name}
                 </Text>
               </TouchableOpacity>
@@ -219,10 +217,7 @@ const GiveBadgeScreen = ({ navigation }: any) => {
           onPress={handleAwardBadges}
           activeOpacity={0.7}
           disabled={isSubmitting}
-          style={[
-            styles.submitButton,
-            isSubmitting && { opacity: 0.5 }
-          ]}
+          style={[styles.submitButton, isSubmitting && { opacity: 0.5 }]}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#FFF" />
@@ -238,56 +233,124 @@ const GiveBadgeScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9F6F2" },
-  header: { 
-    backgroundColor: "#4A3A32", 
-    padding: 20, 
-    flexDirection: "row", 
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF8F5",
+  },
+  header: {
+    backgroundColor: "#4A3A32",
+    padding: 20,
+    flexDirection: "row",
     alignItems: "center",
-    zIndex: 10 // Ensures header doesn't block clicks
+    zIndex: 10,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  backButton: { padding: 10 },
-  headerText: { color: "#FFF", fontSize: 16 },
-  headerTitle: { color: "#FFF", fontSize: 18, fontWeight: "bold", marginLeft: 20 },
-  scrollContent: { padding: 20 },
-  grid: { 
-    flexDirection: "row", 
-    flexWrap: "wrap", 
-    justifyContent: "space-between" 
+  backButton: {
+    padding: 10,
+    marginRight: 8,
   },
-  badgeCard: { 
-    backgroundColor: "#FFF", 
-    padding: 15, 
-    borderRadius: 12, 
-    marginBottom: 15, 
+  headerText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerTitle: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "700",
+    marginLeft: 12,
+    letterSpacing: 0.3,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  badgeCard: {
+    backgroundColor: "#FFF",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 8,
     alignItems: "center",
-    width: '48%', // Flexible width for grid
-    borderWidth: 1,
-    borderColor: "#EEE",
-    cursor: 'pointer' // Force pointer cursor for web
+    width: "48%",
+    borderWidth: 2,
+    borderColor: "#E8DDD8",
+    cursor: "pointer",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    justifyContent: "center",
+    minHeight: 140,
   },
-  selectedCard: { 
-    backgroundColor: "#FF6B9D", 
-    borderColor: "#FF6B9D" 
+  selectedCard: {
+    backgroundColor: "#FF6B9D",
+    borderColor: "#FF6B9D",
+    elevation: 5,
+    shadowColor: "#FF6B9D",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  icon: { fontSize: 32 },
-  label: { marginTop: 8, textAlign: "center", fontWeight: "600", color: "#4A3A32" },
-  selectedLabel: { color: "#FFF" },
-  footer: { 
-    padding: 20, 
-    backgroundColor: "#FFF", 
-    borderTopWidth: 1, 
-    borderTopColor: "#EEE",
-    zIndex: 100 // Force footer to the front for touch events
+  icon: {
+    fontSize: 40,
+    marginBottom: 4,
   },
-  submitButton: { 
-    backgroundColor: "#CD7F4A", 
-    padding: 18, 
-    borderRadius: 12, 
+  label: {
+    marginTop: 8,
+    textAlign: "center",
+    fontWeight: "700",
+    color: "#4A3A32",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  selectedLabel: {
+    color: "#FFF",
+    fontWeight: "700",
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: 24,
+    backgroundColor: "#FFF",
+    borderTopWidth: 1,
+    borderTopColor: "#F0E5DD",
+    zIndex: 100,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  submitButton: {
+    backgroundColor: "#CD7F4A",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: "center",
-    cursor: 'pointer' // Force pointer cursor for web
+    cursor: "pointer",
+    elevation: 3,
+    shadowColor: "#CD7F4A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    flexDirection: "row",
+    justifyContent: "center",
   },
-  submitButtonText: { color: "#FFF", fontWeight: "bold", fontSize: 16 }
+  submitButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
 });
 
 export default GiveBadgeScreen;
